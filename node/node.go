@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 
+	"github.com/rtntubmt97/springprj/define"
 	"github.com/rtntubmt97/springprj/protocol"
 )
 
@@ -51,10 +52,10 @@ func (node *Node) Listen(port int) {
 		}
 
 		node.otherNodesConn[count] = conn
-		msg := protocol.MessageBuffer{}
-		msg.InitEmpty()
-		msg.WriteString("Listen")
-		protocol.WriteMessage(conn, msg)
+		// msg := protocol.MessageBuffer{}
+		// msg.InitEmpty()
+		// msg.WriteString("Listen")
+		// protocol.WriteMessage(conn, msg)
 		go node.Handle(conn)
 	}
 }
@@ -68,11 +69,17 @@ func (node *Node) Handle(conn net.Conn) {
 		if msg == nil {
 			break
 		}
-		// cmd := define.Command(msg.ReadI32())
-		// switch (cmd){
-		// case define.SendInt32 :
-		// }
-		fmt.Println(msg.ReadString())
+		cmd := msg.ReadI32()
+		switch cmd {
+		case define.SendInt32:
+			node.sendInt32_handle(*msg)
+		case define.SendInt64:
+			node.sendInt64_handle(*msg)
+		case define.SendString:
+			node.sendString_handle(*msg)
+		default:
+			fmt.Println(msg.Buf.Bytes())
+		}
 	}
 }
 
@@ -84,10 +91,10 @@ func (node *Node) ConnectNode(port int32) {
 		return
 	}
 	node.otherNodesConn[count] = conn
-	msg := protocol.MessageBuffer{}
-	msg.InitEmpty()
-	msg.WriteString("ConnectNode")
-	protocol.WriteMessage(conn, msg)
+	// msg := protocol.MessageBuffer{}
+	// msg.InitEmpty()
+	// msg.WriteString("ConnectNode")
+	// protocol.WriteMessage(conn, msg)
 	go node.Handle(conn)
 }
 

@@ -3,9 +3,10 @@ package protocol
 import (
 	"bytes"
 	"encoding/binary"
-	"fmt"
 	"io"
 	"reflect"
+
+	"github.com/rtntubmt97/springprj/utils"
 )
 
 type MessageBuffer struct {
@@ -61,14 +62,12 @@ func ReadMessage(reader io.Reader) *MessageBuffer {
 	initBytes := make([]byte, len(magicBytes))
 	_, err := reader.Read(initBytes)
 	if err != nil {
-		fmt.Println(err)
+		utils.LogE(err)
 		return nil
 	}
 
 	if !reflect.DeepEqual(magicBytes, initBytes) {
-		fmt.Println(initBytes)
-		fmt.Println(magicBytes)
-		fmt.Println("wrong initBytes")
+		utils.LogE("wrong initBytes")
 		return nil
 	}
 
@@ -78,11 +77,11 @@ func ReadMessage(reader io.Reader) *MessageBuffer {
 	data := make([]byte, len)
 	n, err := io.ReadFull(reader, data)
 	if err != nil {
-		fmt.Println(err)
+		utils.LogE(err)
 		return nil
 	}
 	if int32(n) != len {
-		fmt.Println("wrong len")
+		utils.LogE("wrong len")
 		return nil
 	}
 

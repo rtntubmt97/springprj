@@ -1,11 +1,11 @@
 package protocol
 
 import (
-	"bufio"
 	"bytes"
 	"encoding/binary"
 	"fmt"
 	"io"
+	"reflect"
 )
 
 type MessageBuffer struct {
@@ -54,26 +54,29 @@ func (mb *MessageBuffer) ReadString() string {
 	return string(mb.Buf.Next(sLen))
 }
 
-const magicByte byte = 'x'
+var magicBytes = []byte("xxDDxx")
 
 func ReadMessage(reader io.Reader) *MessageBuffer {
-	bufReader := bufio.NewReader(reader)
-	initByte, err := bufReader.ReadByte()
+	// bufReader := bufio.NewReader(reader)
+	initBytes := make([]byte, len(magicBytes))
+	_, err := reader.Read(initBytes)
 	if err != nil {
 		fmt.Println(err)
 		return nil
 	}
 
-	if initByte != magicByte {
-		fmt.Println("wrong initByte")
+	if !reflect.DeepEqual(magicBytes, initBytes) {
+		fmt.Println(initBytes)
+		fmt.Println(magicBytes)
+		fmt.Println("wrong initBytes")
 		return nil
 	}
 
 	var len int32
-	binary.Read(bufReader, binary.BigEndian, &len)
+	binary.Read(reader, binary.BigEndian, &len)
 	// data, err := ioutil.ReadAll(io.LimitReader(reader, int64(len)))
 	data := make([]byte, len)
-	n, err := io.ReadFull(bufReader, data)
+	n, err := io.ReadFull(reader, data)
 	if err != nil {
 		fmt.Println(err)
 		return nil
@@ -88,7 +91,7 @@ func ReadMessage(reader io.Reader) *MessageBuffer {
 }
 
 func WriteMessage(writer io.Writer, message MessageBuffer) {
-	writer.Write([]byte{magicByte})
+	writer.Write(magicBytes)
 
 	len := int32(message.Buf.Len())
 	binary.Write(writer, binary.BigEndian, len)

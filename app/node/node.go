@@ -1,7 +1,10 @@
 package main
 
-import "fmt"
+import (
+	"github.com/rtntubmt97/springprj/node"
+)
 
 func main() {
-	fmt.Println("I'm node")
+	node := new(node.Node)
+	node.Start()
 }

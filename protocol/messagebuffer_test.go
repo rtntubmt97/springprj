@@ -11,7 +11,7 @@ func TestFoo(t *testing.T) {
 }
 
 func TestReadWriteI32(t *testing.T) {
-	mb := new(MessageBuffer)
+	mb := MessageBuffer{}
 	mb.InitEmpty()
 	in := int32(2147483)
 	mb.WriteI32(in)
@@ -22,7 +22,7 @@ func TestReadWriteI32(t *testing.T) {
 }
 
 func TestReadWriteI64(t *testing.T) {
-	mb := new(MessageBuffer)
+	mb := MessageBuffer{}
 	mb.InitEmpty()
 	in := int64(2147483647123)
 	mb.WriteI64(in)
@@ -33,7 +33,7 @@ func TestReadWriteI64(t *testing.T) {
 }
 
 func TestReadWriteString(t *testing.T) {
-	mb := new(MessageBuffer)
+	mb := MessageBuffer{}
 	mb.InitEmpty()
 	in := "abcd123asfsadf"
 	mb.WriteString(in)
@@ -44,7 +44,7 @@ func TestReadWriteString(t *testing.T) {
 }
 
 func TestReadWriteMessageBuffer(t *testing.T) {
-	inMb := new(MessageBuffer)
+	inMb := MessageBuffer{}
 	inMb.InitEmpty()
 
 	i1 := int32(123)
@@ -62,7 +62,7 @@ func TestReadWriteMessageBuffer(t *testing.T) {
 		WriteI64(i6)
 
 	stream := new(bytes.Buffer)
-	WriteMessage(stream, *inMb)
+	WriteMessage(stream, inMb)
 	outMb := ReadMessage(stream)
 
 	if i1 != outMb.ReadI32() {

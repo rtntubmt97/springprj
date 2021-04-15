@@ -20,6 +20,8 @@ func (connector *Connector) Init(id int32) {
 	connector.id = id
 	connector.connectedConns = make(map[int32]net.Conn)
 	connector.handlers = make(map[int32]define.HandleFunc)
+
+	utils.LogI(fmt.Sprintf("connId %d initiated", id))
 }
 
 func (connector *Connector) GetConnection(id int32) net.Conn {
@@ -35,14 +37,12 @@ func (connector *Connector) Connect(id int32, port int32) {
 	add := fmt.Sprintf("localhost:%d", port)
 	conn, err := net.Dial("tcp", add)
 	if err != nil {
-		utils.LogE("Invalid port")
+		utils.LogE("Invalid connect port")
 		return
 	}
 
-	connector.greeting_call(conn)
-	msg := protocol.ReadMessage(conn)
+	connId := connector.greeting_wcall(conn)
 
-	connId := connector.greetingBack_handle(*msg, conn)
 	if _, exist := connector.connectedConns[connId]; exist {
 		utils.LogE(fmt.Sprintf("connId %d existed", connId))
 		return
@@ -52,7 +52,7 @@ func (connector *Connector) Connect(id int32, port int32) {
 		return
 	}
 	if connId != id {
-		utils.LogE("Invalid connId")
+		utils.LogE(fmt.Sprintf("Invalid connId %d", connId))
 		return
 	}
 
@@ -67,6 +67,7 @@ func (connector *Connector) Listen(port int) {
 	add := fmt.Sprintf("localhost:%d", port)
 	connector.listener, err = net.Listen("tcp", add)
 	if err != nil {
+		utils.LogE("Invalid listen port")
 		return
 	}
 
@@ -79,7 +80,7 @@ func (connector *Connector) Listen(port int) {
 		// msg := protocol.MessageBuffer{}
 		msg := protocol.ReadMessage(conn)
 
-		connId := connector.greeting_handle(*msg, conn)
+		connId := connector.greeting_whandle(*msg, conn)
 		if _, exist := connector.connectedConns[connId]; exist {
 			utils.LogE(fmt.Sprintf("connId %d existed", connId))
 			continue
@@ -111,23 +112,24 @@ func (connector *Connector) Handle(conn net.Conn) {
 	}
 }
 
-func (connector *Connector) greeting_call(conn net.Conn) {
+func (connector *Connector) greeting_wcall(conn net.Conn) int32 {
 	msg := protocol.MessageBuffer{}
 	msg.InitEmpty()
 	msg.WriteI32(define.Greeting)
 	msg.WriteI32(connector.id)
 	protocol.WriteMessage(conn, msg)
+
+	rspMsg := protocol.ReadMessage(conn)
+
+	cmd := rspMsg.ReadI32()
+	if cmd != define.GreetingRsp {
+		return -1
+	}
+
+	return rspMsg.ReadI32()
 }
 
-func (connector *Connector) greetingBack_call(conn net.Conn) {
-	msg := protocol.MessageBuffer{}
-	msg.InitEmpty()
-	msg.WriteI32(define.GreetingBack)
-	msg.WriteI32(connector.id)
-	protocol.WriteMessage(conn, msg)
-}
-
-func (connector *Connector) greeting_handle(msg protocol.MessageBuffer, conn net.Conn) int32 {
+func (connector *Connector) greeting_whandle(msg protocol.MessageBuffer, conn net.Conn) int32 {
 	cmd := msg.ReadI32()
 	if cmd != define.Greeting {
 		return -1
@@ -135,18 +137,12 @@ func (connector *Connector) greeting_handle(msg protocol.MessageBuffer, conn net
 
 	id := msg.ReadI32()
 
-	connector.greetingBack_call(conn)
-
-	return id
-}
-
-func (connector *Connector) greetingBack_handle(msg protocol.MessageBuffer, conn net.Conn) int32 {
-	cmd := msg.ReadI32()
-	if cmd != define.GreetingBack {
-		return -1
-	}
-
-	id := msg.ReadI32()
+	rspMsg := protocol.MessageBuffer{}
+	rspMsg.InitEmpty()
+	rspMsg.WriteI32(define.GreetingRsp)
+	rspMsg.WriteI32(connector.id)
+	fmt.Printf("send back %d\n", connector.id)
+	protocol.WriteMessage(conn, rspMsg)
 
 	return id
 }

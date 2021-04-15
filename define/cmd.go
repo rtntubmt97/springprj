@@ -5,5 +5,5 @@ const (
 	SendInt64
 	SendString
 	Greeting
-	GreetingBack
+	GreetingRsp
 )

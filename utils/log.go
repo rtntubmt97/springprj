@@ -1,6 +1,14 @@
 package utils
 
-import "fmt"
+import (
+	"fmt"
+	"log"
+	"runtime/debug"
+)
+
+func init() {
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
+}
 
 func LogR(msg interface{}) {
 	fmt.Println(msg)
@@ -12,4 +20,8 @@ func LogE(msg string) {
 
 func LogI(msg string) {
 	fmt.Printf("[LogI] %s\n", msg)
+}
+
+func PrintStack() {
+	debug.PrintStack()
 }

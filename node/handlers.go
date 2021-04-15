@@ -4,19 +4,20 @@ import (
 	"fmt"
 
 	"github.com/rtntubmt97/springprj/protocol"
+	"github.com/rtntubmt97/springprj/utils"
 )
 
 func (node *Node) sendInt32_handle(msg protocol.MessageBuffer) {
 	// fmt.Println("SendInt32_handle run!")
-	fmt.Printf("Receive Int32 %d\n", msg.ReadI32())
+	utils.LogI(fmt.Sprintf("Received Int32 %d", msg.ReadI32()))
 }
 
 func (node *Node) sendInt64_handle(msg protocol.MessageBuffer) {
 	// fmt.Println("SendInt64_handle run!")
-	fmt.Printf("Receive Int64 %d\n", msg.ReadI64())
+	utils.LogI(fmt.Sprintf("Received Int64 %d", msg.ReadI64()))
 }
 
 func (node *Node) sendString_handle(msg protocol.MessageBuffer) {
 	// fmt.Println("SendString_handle run!")
-	fmt.Printf("Receive String %s\n", msg.ReadString())
+	utils.LogI(fmt.Sprintf("Received String %s", msg.ReadString()))
 }

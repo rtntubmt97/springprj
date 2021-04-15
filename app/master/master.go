@@ -4,5 +4,5 @@ import "github.com/rtntubmt97/springprj/master"
 
 func main() {
 	master := new(master.Master)
-	master.Start()
+	master.Listen(1)
 }

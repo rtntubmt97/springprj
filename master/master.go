@@ -1,41 +1,18 @@
 package master
 
 import (
-	"bufio"
-	"fmt"
-	"net"
+	connectorPkg "github.com/rtntubmt97/springprj/connector"
 )
 
-type Master struct{}
-
-func (master *Master) Start() {
-	l, err := net.Listen("tcp", "localhost:9090")
-	if err != nil {
-		return
-	}
-
-	defer l.Close()
-
-	for {
-		conn, err := l.Accept()
-		if err != nil {
-			return
-		}
-
-		go handleUserConnection(conn)
-	}
+type Master struct {
+	id        int32
+	connector connectorPkg.Connector
 }
-func handleUserConnection(c net.Conn) {
-	fmt.Println("foo")
-	defer c.Close()
 
-	reader := bufio.NewReader(c)
-	for {
-		fmt.Println("foobar")
-		userInput, err := reader.ReadString('\n')
-		if err != nil {
-			return
-		}
-		fmt.Println(userInput)
-	}
+func (master *Master) Listen(port int) {
+	master.connector.Listen(port)
+}
+
+func (master *Master) Connect(id int32, port int32) {
+	master.connector.Connect(id, port)
 }

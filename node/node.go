@@ -1,101 +1,35 @@
 package node
 
 import (
-	"fmt"
-	"net"
-
+	connectorPkg "github.com/rtntubmt97/springprj/connector"
 	"github.com/rtntubmt97/springprj/define"
-	"github.com/rtntubmt97/springprj/protocol"
 )
 
 type Node struct {
-	id             int32
-	listener       net.Listener
-	masterConn     net.Conn
-	otherNodesConn map[int32]net.Conn
+	id        int32
+	connector connectorPkg.Connector
 }
 
-func (node *Node) Init() {
-	node.otherNodesConn = make(map[int32]net.Conn)
+func (node *Node) Init(id int32) {
+	node.id = id
+	node.connector = connectorPkg.Connector{}
+	node.connector.Init(id)
+
+	node.connector.SetHandleFunc(define.SendInt32, node.sendInt32_handle)
+	node.connector.SetHandleFunc(define.SendInt64, node.sendInt64_handle)
+	node.connector.SetHandleFunc(define.SendString, node.sendString_handle)
 }
 
 func (node *Node) Start() {
-	c, err := net.Dial("tcp", "localhost:9090")
-	defer c.Close()
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	n, err := c.Write([]byte("foo123\nasf\n"))
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	fmt.Println(n)
-	c.Write([]byte("foo12345\n"))
 
 }
 
 func (node *Node) Listen(port int) {
-	var err error
-	add := fmt.Sprintf("localhost:%d", port)
-	node.listener, err = net.Listen("tcp", add)
-	if err != nil {
-		return
-	}
-
-	for {
-		conn, err := node.listener.Accept()
-		if err != nil {
-			fmt.Println(err)
-		}
-
-		node.otherNodesConn[count] = conn
-		// msg := protocol.MessageBuffer{}
-		// msg.InitEmpty()
-		// msg.WriteString("Listen")
-		// protocol.WriteMessage(conn, msg)
-		go node.Handle(conn)
-	}
+	node.connector.Listen(port)
 }
 
-var count = int32(0)
-
-func (node *Node) Handle(conn net.Conn) {
-	count++
-	for {
-		msg := protocol.ReadMessage(conn)
-		if msg == nil {
-			break
-		}
-		cmd := msg.ReadI32()
-		switch cmd {
-		case define.SendInt32:
-			node.sendInt32_handle(*msg)
-		case define.SendInt64:
-			node.sendInt64_handle(*msg)
-		case define.SendString:
-			node.sendString_handle(*msg)
-		default:
-			fmt.Println(msg.Buf.Bytes())
-		}
-	}
-}
-
-func (node *Node) ConnectNode(port int32) {
-	var err error
-	add := fmt.Sprintf("localhost:%d", port)
-	conn, err := net.Dial("tcp", add)
-	if err != nil {
-		return
-	}
-	node.otherNodesConn[count] = conn
-	// msg := protocol.MessageBuffer{}
-	// msg.InitEmpty()
-	// msg.WriteString("ConnectNode")
-	// protocol.WriteMessage(conn, msg)
-	go node.Handle(conn)
+func (node *Node) Connect(id int32, port int32) {
+	node.connector.Connect(id, port)
 }
 
 func (node *Node) ConnectMaster() {

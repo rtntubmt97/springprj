@@ -62,7 +62,7 @@ func ReadMessage(reader io.Reader) *MessageBuffer {
 	initBytes := make([]byte, len(magicBytes))
 	_, err := reader.Read(initBytes)
 	if err != nil {
-		utils.LogE(err)
+		utils.LogE(err.Error())
 		return nil
 	}
 
@@ -77,7 +77,7 @@ func ReadMessage(reader io.Reader) *MessageBuffer {
 	data := make([]byte, len)
 	n, err := io.ReadFull(reader, data)
 	if err != nil {
-		utils.LogE(err)
+		utils.LogE(err.Error())
 		return nil
 	}
 	if int32(n) != len {

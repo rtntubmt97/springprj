@@ -18,6 +18,10 @@ func LogE(msg string) {
 	fmt.Printf("[logE] %s\n", msg)
 }
 
+func LogD(msg string) {
+	fmt.Printf("[LogD] %s\n", msg)
+}
+
 func LogI(msg string) {
 	fmt.Printf("[LogI] %s\n", msg)
 }

@@ -6,7 +6,7 @@ import (
 )
 
 func IsPortAvailable(port int) bool {
-	ln, err := net.Listen("tcp", ":"+strconv.Itoa(port))
+	ln, err := net.Listen("tcp", "localhost:"+strconv.Itoa(port))
 	if err != nil {
 		return false
 	}

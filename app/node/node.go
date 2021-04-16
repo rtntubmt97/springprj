@@ -34,6 +34,7 @@ func main() {
 	node.SetMoney(int64(initMoney))
 	go node.Listen(port)
 	node.ConnectMaster()
+	node.RequestInfo_wcall()
 
 	time.Sleep(999 * time.Hour)
 }

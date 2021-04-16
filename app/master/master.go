@@ -45,10 +45,14 @@ func getStdinInput() []string {
 }
 
 func createNode(id string, initMoney string) {
-	exeCmd := exec.Command("go", "run", "app/node/node.go", id, initMoney, "somethingtohtop")
+	// exeCmd := exec.Command("go", "run", "app/node/node.go", id, initMoney, "somethingtohtop")
+	exeCmd := exec.Command("./node.exe", id, initMoney, "somethingtohtop")
 	exeCmd.Stdout = os.Stdout
 	exeCmd.Stderr = os.Stderr
-	exeCmd.Start()
+	err := exeCmd.Start()
+	if err != nil {
+		utils.LogE(err.Error())
+	}
 }
 
 var masterNode master.Master
@@ -73,7 +77,7 @@ func main() {
 		}
 		input := strings.Split(inputRaw, " ")
 		for i, ele := range input {
-			input[i] = strings.Trim(ele, "\n ")
+			input[i] = strings.Trim(ele, "\n \r")
 		}
 
 		cmd := InputCmd(input[0])

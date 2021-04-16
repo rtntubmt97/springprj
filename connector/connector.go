@@ -67,7 +67,7 @@ func (connector *Connector) Listen(port int) {
 	add := fmt.Sprintf("localhost:%d", port)
 	connector.listener, err = net.Listen("tcp", add)
 	if err != nil {
-		utils.LogE("Invalid listen port")
+		utils.LogE(fmt.Sprintf("Connector %d got invalid listen port %d", connector.id, port))
 		return
 	}
 

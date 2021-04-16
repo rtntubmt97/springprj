@@ -1,4 +1,3 @@
 StartMaster
 CreateNode 12 12345
 CreateNode 1 12345
-KillAll

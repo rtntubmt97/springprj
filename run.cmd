@@ -1,0 +1,1 @@
+del node.exe && del master.exe && go build .\app\master\master.go && go build .\app\node\node.go && master.exe

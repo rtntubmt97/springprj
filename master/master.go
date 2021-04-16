@@ -14,6 +14,8 @@ func (master *Master) Init() {
 	master.id = define.MasterId
 	master.connector = connectorPkg.Connector{}
 	master.connector.Init(define.MasterId)
+
+	master.connector.SetHandleFunc(define.RequestInfo, master.requestInfo_whandle)
 }
 
 func (master *Master) Listen() {

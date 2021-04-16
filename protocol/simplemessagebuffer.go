@@ -6,70 +6,71 @@ import (
 	"io"
 	"reflect"
 
+	"github.com/rtntubmt97/springprj/define"
 	"github.com/rtntubmt97/springprj/utils"
 )
 
-type MessageBuffer struct {
+type SimpleMessageBuffer struct {
 	Buf *bytes.Buffer
 }
 
-func (mb *MessageBuffer) InitEmpty() {
+func (mb *SimpleMessageBuffer) InitEmpty() {
 	mb.Buf = new(bytes.Buffer)
 }
 
-func (mb *MessageBuffer) Init(command int32) {
+func (mb *SimpleMessageBuffer) Init(command define.ConnectorCmd) {
 	mb.InitEmpty()
-	mb.WriteI32(command)
+	mb.WriteI32(int32(command))
 }
 
-func (mb *MessageBuffer) WriteI32(i int32) *MessageBuffer {
+func (mb SimpleMessageBuffer) WriteI32(i int32) define.MessageBuffer {
 	binary.Write(mb.Buf, binary.BigEndian, i)
 	return mb
 }
 
-func (mb *MessageBuffer) WriteI64(i int64) *MessageBuffer {
+func (mb SimpleMessageBuffer) WriteI64(i int64) define.MessageBuffer {
 	binary.Write(mb.Buf, binary.BigEndian, i)
 	return mb
 }
 
-func (mb *MessageBuffer) WriteString(s string) *MessageBuffer {
+func (mb SimpleMessageBuffer) WriteString(s string) define.MessageBuffer {
 	sLen := int32(len(s))
 	mb.WriteI32(sLen)
 	mb.Buf.WriteString(s)
 	return mb
 }
 
-func (mb *MessageBuffer) ReadI32() int32 {
+func (mb SimpleMessageBuffer) ReadI32() int32 {
 	var out int32
 	binary.Read(mb.Buf, binary.BigEndian, &out)
 	return out
 }
 
-func (mb *MessageBuffer) ReadI64() int64 {
+func (mb SimpleMessageBuffer) ReadI64() int64 {
 	var out int64
 	binary.Read(mb.Buf, binary.BigEndian, &out)
 	return out
 }
 
-func (mb *MessageBuffer) ReadString() string {
+func (mb SimpleMessageBuffer) ReadString() string {
 	sLen := int(mb.ReadI32())
 	return string(mb.Buf.Next(sLen))
 }
 
 var magicBytes = []byte("xxDDxx")
 
-func ReadMessage(reader io.Reader) *MessageBuffer {
+func (message *SimpleMessageBuffer) ReadMessage(reader io.Reader) error {
 	// bufReader := bufio.NewReader(reader)
 	initBytes := make([]byte, len(magicBytes))
 	_, err := reader.Read(initBytes)
 	if err != nil {
 		utils.LogE(err.Error())
-		return nil
+		return err
 	}
 
 	if !reflect.DeepEqual(magicBytes, initBytes) {
 		utils.LogE("wrong initBytes")
-		return nil
+		return err
 	}
 
 	var len int32
@@ -79,24 +80,25 @@ func ReadMessage(reader io.Reader) *MessageBuffer {
 	n, err := io.ReadFull(reader, data)
 	if err != nil {
 		utils.LogE(err.Error())
-		return nil
+		return err
 	}
 	if int32(n) != len {
 		utils.LogE("wrong len")
-		return nil
+		return err
 	}
 
-	return &MessageBuffer{Buf: bytes.NewBuffer(data)}
-
+	message.Buf = bytes.NewBuffer(data)
+	return nil
 }
 
-func WriteMessage(writer io.Writer, message MessageBuffer) {
+func (message *SimpleMessageBuffer) WriteMessage(writer io.Writer) error {
 	writer.Write(magicBytes)
 
 	len := int32(message.Buf.Len())
 	binary.Write(writer, binary.BigEndian, len)
 
 	writer.Write(message.Buf.Bytes())
+	return nil
 }
 
 // func (mb *MessageBuffer) SetReadyToGet() bool {

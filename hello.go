@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	mb := new(protocol.MessageBuffer)
+	mb := new(protocol.SimpleMessageBuffer)
 	mb.InitEmpty()
 	in := int32(3)
 	mb.WriteI32(in)

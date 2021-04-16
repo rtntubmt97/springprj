@@ -1,7 +1,9 @@
 package define
 
+type ConnectorCmd int32
+
 const (
-	SendInt32 int32 = iota
+	SendInt32 ConnectorCmd = iota
 	SendInt64
 	SendString
 	Greeting

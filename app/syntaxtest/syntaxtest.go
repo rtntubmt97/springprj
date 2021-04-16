@@ -2,14 +2,24 @@ package main
 
 import (
 	"fmt"
-	"net"
 )
 
+type TestInterface interface {
+	Print(s string)
+}
+
+type TestStruct struct {
+}
+
+func (st TestStruct) Print(s string) {
+	fmt.Println("foo")
+}
+
+func foo(obj TestInterface) {
+	obj.Print("foo")
+}
+
 func main() {
-	m := make(map[int32]net.Conn)
-	m[1] = &net.IPConn{}
-	i := m[2]
-	if i == nil {
-		fmt.Println(i)
-	}
+	obj := TestStruct{}
+	foo(obj)
 }

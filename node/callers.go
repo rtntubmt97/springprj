@@ -14,11 +14,10 @@ func (node *Node) SendInt32_call(nodeId int32, i int32) {
 		utils.LogE("nil conn")
 		return
 	}
-	msg := protocol.MessageBuffer{}
-	msg.InitEmpty()
-	msg.WriteI32(define.SendInt32)
+	msg := protocol.SimpleMessageBuffer{}
+	msg.Init(define.SendInt32)
 	msg.WriteI32(i)
-	protocol.WriteMessage(conn, msg)
+	msg.WriteMessage(conn)
 	utils.LogI(fmt.Sprintf("Sent Int32 %d", i))
 }
 
@@ -28,11 +27,10 @@ func (node *Node) SendInt64_call(nodeId int32, i int64) {
 		utils.LogE("nil conn")
 		return
 	}
-	msg := protocol.MessageBuffer{}
-	msg.InitEmpty()
-	msg.WriteI32(define.SendInt64)
+	msg := protocol.SimpleMessageBuffer{}
+	msg.Init(define.SendInt64)
 	msg.WriteI64(i)
-	protocol.WriteMessage(conn, msg)
+	msg.WriteMessage(conn)
 	utils.LogI(fmt.Sprintf("Sent Int64 %d", i))
 }
 
@@ -42,10 +40,9 @@ func (node *Node) SendString_call(nodeId int32, s string) {
 		utils.LogE("nil conn")
 		return
 	}
-	msg := protocol.MessageBuffer{}
-	msg.InitEmpty()
-	msg.WriteI32(define.SendString)
+	msg := protocol.SimpleMessageBuffer{}
+	msg.Init(define.SendString)
 	msg.WriteString(s)
-	protocol.WriteMessage(conn, msg)
+	msg.WriteMessage(conn)
 	utils.LogI(fmt.Sprintf("Sent String %s", s))
 }

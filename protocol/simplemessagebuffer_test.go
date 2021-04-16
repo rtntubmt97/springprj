@@ -11,7 +11,7 @@ func TestFoo(t *testing.T) {
 }
 
 func TestReadWriteI32(t *testing.T) {
-	mb := MessageBuffer{}
+	mb := SimpleMessageBuffer{}
 	mb.InitEmpty()
 	in := int32(2147483)
 	mb.WriteI32(in)
@@ -22,7 +22,7 @@ func TestReadWriteI32(t *testing.T) {
 }
 
 func TestReadWriteI64(t *testing.T) {
-	mb := MessageBuffer{}
+	mb := SimpleMessageBuffer{}
 	mb.InitEmpty()
 	in := int64(2147483647123)
 	mb.WriteI64(in)
@@ -33,7 +33,7 @@ func TestReadWriteI64(t *testing.T) {
 }
 
 func TestReadWriteString(t *testing.T) {
-	mb := MessageBuffer{}
+	mb := SimpleMessageBuffer{}
 	mb.InitEmpty()
 	in := "abcd123asfsadf"
 	mb.WriteString(in)
@@ -52,7 +52,7 @@ func TestReadWriteMessageBuffer(t *testing.T) {
 	s5 := "asfggsa"
 	i6 := int64(998671)
 
-	inMb1 := MessageBuffer{}
+	inMb1 := SimpleMessageBuffer{}
 	inMb1.InitEmpty()
 	inMb1.WriteI32(i1).
 		WriteI32(i2).
@@ -61,27 +61,30 @@ func TestReadWriteMessageBuffer(t *testing.T) {
 		WriteString(s5).
 		WriteI64(i6)
 
-	inMb2 := MessageBuffer{}
+	inMb2 := SimpleMessageBuffer{}
 	inMb2.InitEmpty()
 	inMb2.WriteI32(i1)
 
-	inMb3 := MessageBuffer{}
+	inMb3 := SimpleMessageBuffer{}
 	inMb3.InitEmpty()
 	inMb3.WriteString(s5)
 
 	stream := new(bytes.Buffer)
-	WriteMessage(stream, inMb1)
-	WriteMessage(stream, inMb2)
-	WriteMessage(stream, inMb3)
-	outMb1 := ReadMessage(stream)
-	outMb2 := ReadMessage(stream)
-	outMb3 := ReadMessage(stream)
+	inMb1.WriteMessage(stream)
+	inMb2.WriteMessage(stream)
+	inMb3.WriteMessage(stream)
+	outMb1 := SimpleMessageBuffer{}
+	err1 := outMb1.ReadMessage(stream)
+	outMb2 := SimpleMessageBuffer{}
+	err2 := outMb2.ReadMessage(stream)
+	outMb3 := SimpleMessageBuffer{}
+	outMb3.ReadMessage(stream)
 
-	if outMb1 == nil {
+	if err1 != nil {
 		t.Error("cannot read message1")
 	}
 
-	if outMb2 == nil {
+	if err2 != nil {
 		t.Error("cannot read message2")
 	}
 

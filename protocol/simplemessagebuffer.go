@@ -70,7 +70,7 @@ func (message *SimpleMessageBuffer) ReadMessage(reader io.Reader) error {
 
 	if !reflect.DeepEqual(magicBytes, initBytes) {
 		utils.LogE("wrong initBytes")
-		return err
+		return define.ErrWrongInitBytes
 	}
 
 	var len int32

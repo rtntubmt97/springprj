@@ -62,11 +62,11 @@ func (node *Node) RequestInfo_wcall() map[int32]int32 {
 	utils.LogI(fmt.Sprintf("Requested from address %s", conn.LocalAddr().String()))
 
 	rspMsg := protocol.SimpleMessageBuffer{}
-	rspMsg.InitEmpty()
 
 	err := rspMsg.ReadMessage(conn)
 	if err != nil {
 		utils.LogE(err.Error())
+		return nil
 	}
 
 	utils.LogI("Received")

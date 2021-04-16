@@ -59,7 +59,7 @@ func (connector *Connector) Connect(id int32, port int32) {
 	utils.LogI(fmt.Sprintf("Connected connId %d", connId))
 	connector.connectedConns[connId] = conn
 
-	go connector.Handle(conn)
+	go connector.Handle(connId, conn)
 }
 
 func (connector *Connector) Listen(port int) {
@@ -71,6 +71,7 @@ func (connector *Connector) Listen(port int) {
 		return
 	}
 
+	utils.LogI(fmt.Sprintf("Start listening on port %d", port))
 	for {
 		conn, err := connector.listener.Accept()
 		if err != nil {
@@ -93,11 +94,11 @@ func (connector *Connector) Listen(port int) {
 		utils.LogI(fmt.Sprintf("Accepted connId %d", connId))
 		connector.connectedConns[connId] = conn
 
-		go connector.Handle(conn)
+		go connector.Handle(connId, conn)
 	}
 }
 
-func (connector *Connector) Handle(conn net.Conn) {
+func (connector *Connector) Handle(connId int32, conn net.Conn) {
 	for {
 		// utils.LogI(fmt.Sprintf("%d run Handle", connector.id))
 		msg := protocol.ReadMessage(conn)
@@ -107,7 +108,7 @@ func (connector *Connector) Handle(conn net.Conn) {
 		cmd := msg.ReadI32()
 		f := connector.handlers[cmd]
 		if f != nil {
-			f(*msg)
+			f(connId, *msg)
 		}
 	}
 }
@@ -135,14 +136,13 @@ func (connector *Connector) greeting_whandle(msg protocol.MessageBuffer, conn ne
 		return -1
 	}
 
-	id := msg.ReadI32()
+	idFromGreeting := msg.ReadI32()
 
 	rspMsg := protocol.MessageBuffer{}
 	rspMsg.InitEmpty()
 	rspMsg.WriteI32(define.GreetingRsp)
 	rspMsg.WriteI32(connector.id)
-	fmt.Printf("send back %d\n", connector.id)
 	protocol.WriteMessage(conn, rspMsg)
 
-	return id
+	return idFromGreeting
 }

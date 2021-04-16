@@ -6,4 +6,13 @@ const (
 	SendString
 	Greeting
 	GreetingRsp
+	StartMaster
+	KillAll
+	CreateNode
+	Send
+	Receive
+	ReceiveAll
+	BeginSnapshot
+	CollectState
+	PrintSnapshot
 )

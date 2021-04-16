@@ -17,8 +17,9 @@ func (mb *MessageBuffer) InitEmpty() {
 	mb.Buf = new(bytes.Buffer)
 }
 
-func (mb *MessageBuffer) Init(command int32, ver int32) {
-
+func (mb *MessageBuffer) Init(command int32) {
+	mb.InitEmpty()
+	mb.WriteI32(command)
 }
 
 func (mb *MessageBuffer) WriteI32(i int32) *MessageBuffer {

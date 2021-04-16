@@ -12,21 +12,21 @@ import (
 type Connector struct {
 	id             int32
 	listener       net.Listener
-	connectedConns map[int32]net.Conn
+	ConnectedConns map[int32]net.Conn
 	handlers       map[define.ConnectorCmd]define.HandleFunc
 }
 
 func (connector *Connector) Init(id int32) {
 	connector.id = id
-	connector.connectedConns = make(map[int32]net.Conn)
+	connector.ConnectedConns = make(map[int32]net.Conn)
 	connector.handlers = make(map[define.ConnectorCmd]define.HandleFunc)
 
 	utils.LogI(fmt.Sprintf("connId %d initiated", id))
 }
 
-func (connector *Connector) GetConnection(id int32) net.Conn {
-	return connector.connectedConns[id]
-}
+// func (connector *Connector) GetConnection(id int32) net.Conn {
+// 	return connector.ConnectedConns[id]
+// }
 
 func (connector *Connector) SetHandleFunc(cmd define.ConnectorCmd, f define.HandleFunc) {
 	connector.handlers[cmd] = f
@@ -43,7 +43,7 @@ func (connector *Connector) Connect(id int32, port int32) {
 
 	connId := connector.greeting_wcall(conn)
 
-	if _, exist := connector.connectedConns[connId]; exist {
+	if _, exist := connector.ConnectedConns[connId]; exist {
 		utils.LogE(fmt.Sprintf("connId %d existed", connId))
 		return
 	}
@@ -57,7 +57,7 @@ func (connector *Connector) Connect(id int32, port int32) {
 	}
 
 	utils.LogI(fmt.Sprintf("Connected connId %d", connId))
-	connector.connectedConns[connId] = conn
+	connector.ConnectedConns[connId] = conn
 
 	go connector.Handle(connId, conn)
 }
@@ -83,7 +83,7 @@ func (connector *Connector) Listen(port int) {
 		msg.ReadMessage(conn)
 
 		connId := connector.greeting_whandle(msg, conn)
-		if _, exist := connector.connectedConns[connId]; exist {
+		if _, exist := connector.ConnectedConns[connId]; exist {
 			utils.LogE(fmt.Sprintf("connId %d existed", connId))
 			continue
 		}
@@ -93,7 +93,7 @@ func (connector *Connector) Listen(port int) {
 		}
 
 		utils.LogI(fmt.Sprintf("Accepted connId %d", connId))
-		connector.connectedConns[connId] = conn
+		connector.ConnectedConns[connId] = conn
 
 		go connector.Handle(connId, conn)
 	}

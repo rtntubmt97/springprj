@@ -8,6 +8,8 @@ const (
 	SendString
 	Greeting
 	GreetingRsp
+	RequestInfo
+	RequestInfoRsp
 	StartMaster
 	KillAll
 	CreateNode
@@ -17,4 +19,6 @@ const (
 	BeginSnapshot
 	CollectState
 	PrintSnapshot
+	Input_Send
+	Input_Kill
 )

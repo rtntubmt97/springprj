@@ -9,7 +9,7 @@ import (
 )
 
 func (node *Node) SendInt32_call(nodeId int32, i int32) {
-	conn := node.connector.GetConnection(nodeId)
+	conn := node.connector.ConnectedConns[nodeId]
 	if conn == nil {
 		utils.LogE("nil conn")
 		return
@@ -22,7 +22,7 @@ func (node *Node) SendInt32_call(nodeId int32, i int32) {
 }
 
 func (node *Node) SendInt64_call(nodeId int32, i int64) {
-	conn := node.connector.GetConnection(nodeId)
+	conn := node.connector.ConnectedConns[nodeId]
 	if conn == nil {
 		utils.LogE("nil conn")
 		return
@@ -35,7 +35,7 @@ func (node *Node) SendInt64_call(nodeId int32, i int64) {
 }
 
 func (node *Node) SendString_call(nodeId int32, s string) {
-	conn := node.connector.GetConnection(nodeId)
+	conn := node.connector.ConnectedConns[nodeId]
 	if conn == nil {
 		utils.LogE("nil conn")
 		return
@@ -45,4 +45,20 @@ func (node *Node) SendString_call(nodeId int32, s string) {
 	msg.WriteString(s)
 	msg.WriteMessage(conn)
 	utils.LogI(fmt.Sprintf("Sent String %s", s))
+}
+
+func (node *Node) RequestInfo_wcall(nodeId int32, s string) map[int32]int32 {
+	conn := node.connector.ConnectedConns[nodeId]
+	if conn == nil {
+		utils.LogE("nil conn")
+		return nil
+	}
+	msg := protocol.SimpleMessageBuffer{}
+	msg.Init(define.RequestInfo)
+	msg.WriteMessage(conn)
+	utils.LogI(fmt.Sprintf("Node %d request info", nodeId))
+
+	ret := make(map[int32]int32)
+
+	return ret
 }

@@ -7,6 +7,7 @@ import (
 
 type Node struct {
 	id        int32
+	money     int64
 	connector connectorPkg.Connector
 	channels  map[int32](chan int32)
 }
@@ -21,6 +22,11 @@ func (node *Node) Init(id int32) {
 	node.connector.SetHandleFunc(define.SendInt32, node.sendInt32_handle)
 	node.connector.SetHandleFunc(define.SendInt64, node.sendInt64_handle)
 	node.connector.SetHandleFunc(define.SendString, node.sendString_handle)
+	node.connector.SetHandleFunc(define.Input_Kill, node.kill_handle)
+}
+
+func (node *Node) SetMoney(money int64) {
+	node.money = money
 }
 
 func (node *Node) Start() {
@@ -36,5 +42,5 @@ func (node *Node) Connect(id int32, port int32) {
 }
 
 func (node *Node) ConnectMaster() {
-
+	node.Connect(define.MasterId, define.MasterPort)
 }

@@ -2,6 +2,7 @@ package master
 
 import (
 	connectorPkg "github.com/rtntubmt97/springprj/connector"
+	"github.com/rtntubmt97/springprj/define"
 )
 
 type Master struct {
@@ -9,10 +10,23 @@ type Master struct {
 	connector connectorPkg.Connector
 }
 
-func (master *Master) Listen(port int) {
-	master.connector.Listen(port)
+func (master *Master) Init() {
+	master.id = define.MasterId
+	master.connector = connectorPkg.Connector{}
+	master.connector.Init(define.MasterId)
+}
+
+func (master *Master) Listen() {
+	master.connector.Listen(int(define.MasterPort))
 }
 
 func (master *Master) Connect(id int32, port int32) {
 	master.connector.Connect(id, port)
+}
+
+func (master *Master) KillAll() {
+	for nodeId := range master.connector.ConnectedConns {
+		master.inputKill_call(nodeId)
+	}
+
 }

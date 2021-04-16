@@ -1,9 +1,9 @@
+StartMaster
+CreateNode 12 12345
 package main
 
 import (
 	"bufio"
-	"fmt"
-	"io"
 	"os"
 	"os/exec"
 	"strings"
@@ -27,7 +27,7 @@ const (
 	PrintSnapshot InputCmd = "PrintSnapshot"
 )
 
-func getStdinInput() []string {
+func getInput() []string {
 	reader := bufio.NewReader(os.Stdin)
 	input, err := reader.ReadString('\n')
 	if err != nil {
@@ -54,28 +54,9 @@ func createNode(id string, initMoney string) {
 var masterNode master.Master
 
 func main() {
-	file, err := os.Open("input.txt")
-	if err != nil {
-		utils.LogE(err.Error())
-		return
-	}
-	defer file.Close()
-	reader := bufio.NewReader(file)
-	for {
-		// input := getStdinInput()
-		inputRaw, err := reader.ReadString('\n')
-		if err == io.EOF {
-			fmt.Println(err)
-			break
-		}
-		if err != nil {
-			break
-		}
-		input := strings.Split(inputRaw, " ")
-		for i, ele := range input {
-			input[i] = strings.Trim(ele, "\n ")
-		}
 
+	for {
+		input := getInput()
 		cmd := InputCmd(input[0])
 
 		switch cmd {
@@ -88,11 +69,7 @@ func main() {
 		case KillAll:
 			utils.LogI("Matched KillAll")
 			masterNode.KillAll()
-			time.Sleep(1000 * time.Millisecond)
-			utils.LogI("Ready to exit")
 			os.Exit(0)
-
-		case Send:
 
 		case CreateNode:
 			utils.LogI("Matched CreateNode")
@@ -100,7 +77,6 @@ func main() {
 
 		default:
 		}
-		time.Sleep(1000 * time.Millisecond)
+		time.Sleep(1 * time.Second)
 	}
-	time.Sleep(100 * time.Hour)
 }

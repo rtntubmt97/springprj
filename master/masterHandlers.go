@@ -1,8 +1,6 @@
 package master
 
 import (
-	"fmt"
-
 	"github.com/rtntubmt97/springprj/define"
 	"github.com/rtntubmt97/springprj/protocol"
 	"github.com/rtntubmt97/springprj/utils"
@@ -21,5 +19,4 @@ func (master *Master) requestInfo_whandle(connId int32, msg define.MessageBuffer
 	}
 	conn := master.connector.ConnectedConns[connId]
 	rspMsg.Write(conn)
-	utils.LogI(fmt.Sprintf("Master responsed to node %d address %s", connId, conn.RemoteAddr().String()))
 }

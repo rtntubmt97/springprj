@@ -36,16 +36,7 @@ func main() {
 	time.Sleep(100 * time.Millisecond)
 	node.WaitReady()
 	node.ConnectMaster()
-	otherNodeListenPorts := node.RequestInfo_wcall()
-	for nodeId, port := range otherNodeListenPorts {
-		if nodeId == node.GetId() {
-			continue
-		}
-		if node.IsConnected(nodeId) {
-			continue
-		}
-		node.Connect(nodeId, port)
-	}
+	node.ConnectPeers()
 
 	time.Sleep(999 * time.Hour)
 }

@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 	"time"
 
@@ -68,16 +69,20 @@ func main() {
 	for {
 		// input := getStdinInput()
 		inputRaw, err := reader.ReadString('\n')
-		if err == io.EOF {
-			fmt.Println(err)
-			break
+
+		if err != io.EOF {
+			if inputRaw[0] == '#' {
+				continue
+			}
+			if err != nil {
+				fmt.Println(err)
+				break
+			}
 		}
-		if err != nil {
-			break
-		}
+
 		input := strings.Split(inputRaw, " ")
 		for i, ele := range input {
-			input[i] = strings.Trim(ele, "\n \r")
+			input[i] = strings.Trim(ele, "\n\r\t ")
 		}
 
 		cmd := InputCmd(input[0])
@@ -88,23 +93,48 @@ func main() {
 			masterNode = master.Master{}
 			masterNode.Init()
 			go masterNode.Listen()
+			time.Sleep(1 * time.Second)
 
 		case KillAll:
-			utils.LogI("Matched KillAll")
+			utils.LogI(inputRaw)
 			masterNode.KillAll()
-			time.Sleep(1000 * time.Millisecond)
+			time.Sleep(1 * time.Second)
 			utils.LogI("Ready to exit")
 			os.Exit(0)
 
-		case Send:
-
 		case CreateNode:
-			utils.LogI("Matched CreateNode")
+			utils.LogI(inputRaw)
 			createNode(input[1], input[2])
+
+		case Send:
+			utils.LogI(inputRaw)
+			sender, _ := strconv.Atoi(input[1])
+			receiver, _ := strconv.Atoi(input[2])
+			money, _ := strconv.Atoi(input[3])
+			masterNode.InputSend_call(int32(sender), int32(receiver), int32(money))
+
+		case Receive:
+			utils.LogI(inputRaw)
+			sender := -1
+			receiver := -1
+			if len(input) == 2 {
+				receiver, _ = strconv.Atoi(input[1])
+			} else if len(input) == 3 {
+				receiver, _ = strconv.Atoi(input[1])
+				sender, _ = strconv.Atoi(input[2])
+			}
+			masterNode.InputReceive_call(int32(receiver), int32(sender))
+
+		case ReceiveAll:
+			utils.LogI(inputRaw)
+			masterNode.InputReceiveAll_call()
 
 		default:
 		}
-		time.Sleep(1000 * time.Millisecond)
+		time.Sleep(1 * time.Second)
+		if err == io.EOF {
+			break
+		}
 	}
 	time.Sleep(100 * time.Hour)
 }

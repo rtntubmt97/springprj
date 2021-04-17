@@ -5,6 +5,8 @@ import (
 	"log"
 	"os"
 	"runtime/debug"
+
+	"github.com/rtntubmt97/springprj/define"
 )
 
 var innerLog *log.Logger
@@ -14,7 +16,7 @@ func init() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 }
 
-func LogR(msg interface{}) {
+func LogR(msg define.ProjectOutput) {
 	fmt.Println(msg)
 }
 
@@ -35,4 +37,14 @@ func LogI(msg string) {
 
 func PrintStack() {
 	debug.PrintStack()
+}
+
+func CreateTransferOutput(sender int32, money int32) define.ProjectOutput {
+	msg := fmt.Sprintf("%d Transfer %d", sender, money)
+	return define.ProjectOutput(msg)
+}
+
+func CreateTokenOutput(sender int32) define.ProjectOutput {
+	msg := fmt.Sprintf("%d SnapshotToken -1", sender)
+	return define.ProjectOutput(msg)
 }

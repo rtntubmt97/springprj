@@ -1,15 +1,25 @@
 package node
 
 import (
+	"github.com/rtntubmt97/springprj/connector"
 	connectorPkg "github.com/rtntubmt97/springprj/connector"
 	"github.com/rtntubmt97/springprj/define"
 )
 
 type Node struct {
-	id        int32
-	money     int64
-	connector connectorPkg.Connector
-	channels  map[int32](chan int32)
+	id            int32
+	money         int64
+	connector     connectorPkg.Connector
+	moneyChannels map[int32](chan MoneyTokenInfo)
+}
+
+type MoneyTokenInfo struct {
+	SenderId int32
+	Money    int32
+}
+
+func (info MoneyTokenInfo) IsToken() bool {
+	return info.Money == -1
 }
 
 func (node *Node) IsConnected(otherId int32) bool {
@@ -18,15 +28,22 @@ func (node *Node) IsConnected(otherId int32) bool {
 
 func (node *Node) Init(id int32) {
 	node.id = id
-	node.connector = connectorPkg.Connector{}
-	node.connector.Init(id)
+	connector := connectorPkg.Connector{}
+	connector.Init(id)
 
-	node.channels = make(map[int32](chan int32))
+	connector.SetAfterAccept(node.afterAccept)
 
-	node.connector.SetHandleFunc(define.SendInt32, node.sendInt32_handle)
-	node.connector.SetHandleFunc(define.SendInt64, node.sendInt64_handle)
-	node.connector.SetHandleFunc(define.SendString, node.sendString_handle)
-	node.connector.SetHandleFunc(define.Input_Kill, node.kill_handle)
+	connector.SetHandleFunc(define.SendInt32, node.sendInt32_handle)
+	connector.SetHandleFunc(define.SendInt64, node.sendInt64_handle)
+	connector.SetHandleFunc(define.SendString, node.sendString_handle)
+	connector.SetHandleFunc(define.Input_Kill, node.kill_handle)
+	connector.SetHandleFunc(define.Input_Send, node.inputSend_handle)
+	connector.SetHandleFunc(define.Send, node.send_whandle)
+	connector.SetHandleFunc(define.Input_Recieve, node.inputReceive_handle)
+	connector.SetHandleFunc(define.Input_RecieveAll, node.inputReceiveAll_handle)
+
+	node.connector = connector
+	node.moneyChannels = make(map[int32](chan MoneyTokenInfo))
 }
 
 func (node *Node) GetId() int32 {
@@ -53,6 +70,28 @@ func (node *Node) ConnectMaster() {
 	node.Connect(define.MasterId, define.MasterPort)
 }
 
+func (node *Node) ConnectPeers() {
+	otherNodeListenPorts := node.RequestInfo_wcall()
+	for nodeId, port := range otherNodeListenPorts {
+		if nodeId == node.GetId() {
+			continue
+		}
+		if node.IsConnected(nodeId) {
+			continue
+		}
+		node.Connect(nodeId, port)
+		node.moneyChannels[nodeId] = make(chan MoneyTokenInfo, 1000)
+	}
+}
+
 func (node *Node) WaitReady() {
 	node.connector.WaitReady()
+}
+
+func (node *Node) WaitRsp(connId int32) define.MessageBuffer {
+	return node.connector.WaitRsp(connId)
+}
+
+func (node *Node) afterAccept(conInfo connector.OtherInfo) {
+	node.moneyChannels[conInfo.NodeId] = make(chan MoneyTokenInfo, 1000)
 }

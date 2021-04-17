@@ -8,7 +8,7 @@ import (
 	"github.com/rtntubmt97/springprj/utils"
 )
 
-func (master *Master) inputKill_call(nodeId int32) {
+func (master *Master) InputKill_call(nodeId int32) {
 	conn := master.connector.ConnectedConns[nodeId]
 	if conn == nil {
 		utils.LogE("nil conn")
@@ -20,7 +20,7 @@ func (master *Master) inputKill_call(nodeId int32) {
 	utils.LogI(fmt.Sprintf("Sent kill to nodeId %d", nodeId))
 }
 
-func (master *Master) inputSend_call(nodeId int32, money int32) {
+func (master *Master) InputSend_call(nodeId int32, receiver int32, money int32) {
 	conn := master.connector.ConnectedConns[nodeId]
 	if conn == nil {
 		utils.LogE("nil conn")
@@ -28,7 +28,30 @@ func (master *Master) inputSend_call(nodeId int32, money int32) {
 	}
 	msg := protocol.SimpleMessageBuffer{}
 	msg.Init(define.Input_Send)
+	msg.WriteI32(receiver)
 	msg.WriteI32(money)
 	master.connector.WriteTo(nodeId, &msg)
-	utils.LogI(fmt.Sprintf("Sent inputSend to nodeId %d", nodeId))
+	utils.LogI(fmt.Sprintf("Sent inputSend to nodeId %d, receiver is %d, money is %d", nodeId, receiver, money))
+}
+
+func (master *Master) InputReceive_call(receiver int32, sender int32) {
+	conn := master.connector.ConnectedConns[receiver]
+	if conn == nil {
+		utils.LogE("nil conn")
+		return
+	}
+	msg := protocol.SimpleMessageBuffer{}
+	msg.Init(define.Input_Recieve)
+	msg.WriteI32(sender)
+	master.connector.WriteTo(receiver, &msg)
+	utils.LogI(fmt.Sprintf("Sent inputReceive to nodeId %d, sender is %d", receiver, sender))
+}
+
+func (master *Master) InputReceiveAll_call() {
+	for connId := range master.connector.ConnectedConns {
+		msg := protocol.SimpleMessageBuffer{}
+		msg.Init(define.Input_RecieveAll)
+		master.connector.WriteTo(connId, &msg)
+		utils.LogI(fmt.Sprintf("Sent inputReceiveAll to nodeId %d", connId))
+	}
 }

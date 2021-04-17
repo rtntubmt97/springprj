@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+
+	"github.com/rtntubmt97/springprj/node"
 )
 
 type TestInterface interface {
@@ -24,12 +26,10 @@ type Wraper struct {
 }
 
 func main() {
-	m := make(map[int32]*Wraper)
-	w := Wraper{i: 1}
-	m[111] = &w
-	w.i = 10
-	fmt.Println(m[111].i)
-	for _, i := range m {
-		fmt.Println(i)
-	}
+	info := node.MoneyTokenInfo{}
+	info.Money = 100
+	fmt.Println(info.IsToken())
+	info2 := new(node.MoneyTokenInfo)
+	info2.Money = -1
+	fmt.Println(info2.IsToken())
 }

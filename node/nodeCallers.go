@@ -87,3 +87,25 @@ func (node *Node) RequestInfo_wcall() map[int32]int32 {
 
 	return ret
 }
+
+func (node *Node) Send_wcall(receiver int32, money int32) {
+	conn := node.connector.ConnectedConns[receiver]
+	if conn == nil {
+		utils.LogE("nil conn")
+		return
+	}
+	msg := protocol.SimpleMessageBuffer{}
+	msg.Init(define.Send)
+	msg.WriteI32(money)
+	node.connector.WriteTo(receiver, &msg)
+	// msg.Write(conn)
+	utils.LogI(fmt.Sprintf("Send_wcall to %d, money is %d", receiver, money))
+	rspMsg := node.WaitRsp(receiver)
+	cmd := define.ConnectorCmd(rspMsg.ReadI32())
+	if cmd != define.SendRsp {
+		utils.LogE("Wrong send response")
+	} else {
+		utils.LogI("Success send")
+	}
+	node.money -= int64(money)
+}

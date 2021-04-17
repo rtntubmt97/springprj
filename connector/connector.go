@@ -24,8 +24,11 @@ type Connector struct {
 	writeOutMutexes map[int32]*sync.Mutex
 	rspMsgChannel   map[int32](chan define.MessageBuffer)
 	OtherInfos      map[int32]*OtherInfo
-	readyMutex      sync.Mutex
+	readyMutex      *sync.Mutex
+	afterAccept     AfterAccept
 }
+
+type AfterAccept func(connInfo OtherInfo)
 
 func (connector *Connector) Init(id int32) {
 	connector.id = id
@@ -36,6 +39,7 @@ func (connector *Connector) Init(id int32) {
 	connector.OtherInfos = make(map[int32]*OtherInfo)
 
 	utils.LogI(fmt.Sprintf("connId %d initiated", id))
+	connector.readyMutex = new(sync.Mutex)
 
 	connector.SetHandleFunc(define.Rsp, connector.forwardRsp)
 }
@@ -46,6 +50,10 @@ func (connector *Connector) Init(id int32) {
 
 func (connector *Connector) SetHandleFunc(cmd define.ConnectorCmd, f define.HandleFunc) {
 	connector.handlers[cmd] = f
+}
+
+func (connector *Connector) SetAfterAccept(afterAccept AfterAccept) {
+	connector.afterAccept = afterAccept
 }
 
 func (connector *Connector) WaitReady() {
@@ -137,6 +145,9 @@ func (connector *Connector) Listen(port int) {
 
 		utils.LogI(fmt.Sprintf("Connector %d accepted conn %d", connector.id, otherInfo))
 		connector.initNewConn(otherInfo, conn)
+		if connector.afterAccept != nil {
+			connector.afterAccept(otherInfo)
+		}
 
 		go connector.Handle(otherInfo, conn)
 	}

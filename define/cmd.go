@@ -15,11 +15,14 @@ const (
 	KillAll
 	CreateNode
 	Send
-	Receive
-	ReceiveAll
+	SendRsp
+	// Receive
+	// ReceiveAll
 	BeginSnapshot
 	CollectState
 	PrintSnapshot
 	Input_Send
+	Input_Recieve
+	Input_RecieveAll
 	Input_Kill
 )

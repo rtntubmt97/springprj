@@ -28,7 +28,7 @@ func (master *Master) Connect(id int32, port int32) {
 
 func (master *Master) KillAll() {
 	for nodeId := range master.connector.ConnectedConns {
-		master.inputKill_call(nodeId)
+		master.InputKill_call(nodeId)
 	}
 
 }

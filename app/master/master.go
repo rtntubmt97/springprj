@@ -45,8 +45,8 @@ func getStdinInput() []string {
 }
 
 func createNode(id string, initMoney string) {
-	// exeCmd := exec.Command("go", "run", "app/node/node.go", id, initMoney, "somethingtohtop")
-	exeCmd := exec.Command("./node.exe", id, initMoney, "somethingtohtop")
+	exeCmd := exec.Command("go", "run", "app/node/node.go", id, initMoney, "somethingtohtop")
+	// exeCmd := exec.Command("./node.exe", id, initMoney, "somethingtohtop")
 	exeCmd.Stdout = os.Stdout
 	exeCmd.Stderr = os.Stderr
 	err := exeCmd.Start()

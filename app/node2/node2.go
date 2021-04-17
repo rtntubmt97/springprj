@@ -9,6 +9,7 @@ import (
 func main() {
 	node := node.Node{}
 	node.Init(2)
+	go node.Listen(9091)
 	otherNodeId := int32(1)
 	node.Connect(otherNodeId, 9090)
 	node.SendInt32_call(otherNodeId, 123)

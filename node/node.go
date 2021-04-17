@@ -12,6 +12,10 @@ type Node struct {
 	channels  map[int32](chan int32)
 }
 
+func (node *Node) IsConnected(otherId int32) bool {
+	return node.connector.IsConnected(otherId)
+}
+
 func (node *Node) Init(id int32) {
 	node.id = id
 	node.connector = connectorPkg.Connector{}
@@ -23,6 +27,10 @@ func (node *Node) Init(id int32) {
 	node.connector.SetHandleFunc(define.SendInt64, node.sendInt64_handle)
 	node.connector.SetHandleFunc(define.SendString, node.sendString_handle)
 	node.connector.SetHandleFunc(define.Input_Kill, node.kill_handle)
+}
+
+func (node *Node) GetId() int32 {
+	return node.id
 }
 
 func (node *Node) SetMoney(money int64) {
@@ -43,4 +51,8 @@ func (node *Node) Connect(id int32, port int32) {
 
 func (node *Node) ConnectMaster() {
 	node.Connect(define.MasterId, define.MasterPort)
+}
+
+func (node *Node) WaitReady() {
+	node.connector.WaitReady()
 }

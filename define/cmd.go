@@ -6,6 +6,7 @@ const (
 	SendInt32 ConnectorCmd = iota
 	SendInt64
 	SendString
+	Rsp
 	Greeting
 	GreetingRsp
 	RequestInfo

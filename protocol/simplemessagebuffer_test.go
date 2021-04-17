@@ -70,15 +70,15 @@ func TestReadWriteMessageBuffer(t *testing.T) {
 	inMb3.WriteString(s5)
 
 	stream := new(bytes.Buffer)
-	inMb1.WriteMessage(stream)
-	inMb2.WriteMessage(stream)
-	inMb3.WriteMessage(stream)
+	inMb1.Write(stream)
+	inMb2.Write(stream)
+	inMb3.Write(stream)
 	outMb1 := SimpleMessageBuffer{}
-	err1 := outMb1.ReadMessage(stream)
+	err1 := outMb1.Read(stream)
 	outMb2 := SimpleMessageBuffer{}
-	err2 := outMb2.ReadMessage(stream)
+	err2 := outMb2.Read(stream)
 	outMb3 := SimpleMessageBuffer{}
-	outMb3.ReadMessage(stream)
+	outMb3.Read(stream)
 
 	if err1 != nil {
 		t.Error("cannot read message1")

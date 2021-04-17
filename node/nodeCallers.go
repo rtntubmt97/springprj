@@ -17,7 +17,8 @@ func (node *Node) SendInt32_call(otherNodeId int32, i int32) {
 	msg := protocol.SimpleMessageBuffer{}
 	msg.Init(define.SendInt32)
 	msg.WriteI32(i)
-	msg.WriteMessage(conn)
+	node.connector.WriteTo(otherNodeId, &msg)
+	// msg.Write(conn)
 	utils.LogI(fmt.Sprintf("Sent Int32 %d", i))
 }
 
@@ -30,7 +31,8 @@ func (node *Node) SendInt64_call(otherNodeId int32, i int64) {
 	msg := protocol.SimpleMessageBuffer{}
 	msg.Init(define.SendInt64)
 	msg.WriteI64(i)
-	msg.WriteMessage(conn)
+	node.connector.WriteTo(otherNodeId, &msg)
+	// msg.Write(conn)
 	utils.LogI(fmt.Sprintf("Sent Int64 %d", i))
 }
 
@@ -43,7 +45,8 @@ func (node *Node) SendString_call(otherNodeId int32, s string) {
 	msg := protocol.SimpleMessageBuffer{}
 	msg.Init(define.SendString)
 	msg.WriteString(s)
-	msg.WriteMessage(conn)
+	node.connector.WriteTo(otherNodeId, &msg)
+	// msg.Write(conn)
 	utils.LogI(fmt.Sprintf("Sent String %s", s))
 }
 
@@ -55,19 +58,14 @@ func (node *Node) RequestInfo_wcall() map[int32]int32 {
 	}
 	msg := protocol.SimpleMessageBuffer{}
 	msg.Init(define.RequestInfo)
-	msg.WriteMessage(conn)
+	node.connector.WriteTo(define.MasterId, &msg)
+	// msg.Write(conn)
 
 	utils.LogI(fmt.Sprintf("Node %d request info", node.id))
 
 	utils.LogI(fmt.Sprintf("Requested from address %s", conn.LocalAddr().String()))
 
-	rspMsg := protocol.SimpleMessageBuffer{}
-
-	err := rspMsg.ReadMessage(conn)
-	if err != nil {
-		utils.LogE(err.Error())
-		return nil
-	}
+	rspMsg := node.connector.WaitRsp(define.MasterId)
 
 	utils.LogI("Received")
 
@@ -80,8 +78,11 @@ func (node *Node) RequestInfo_wcall() map[int32]int32 {
 
 	connN := rspMsg.ReadI32()
 	for i := int32(0); i < connN; i++ {
-		utils.LogI(fmt.Sprintf("connId %d", rspMsg.ReadI32()))
-		utils.LogI(fmt.Sprintf("port %d", rspMsg.ReadI32()))
+		otherId := rspMsg.ReadI32()
+		otherListenPort := rspMsg.ReadI32()
+		ret[otherId] = otherListenPort
+		utils.LogI(fmt.Sprintf("connId %d", otherId))
+		utils.LogI(fmt.Sprintf("port %d", otherListenPort))
 	}
 
 	return ret

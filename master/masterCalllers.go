@@ -16,7 +16,7 @@ func (master *Master) inputKill_call(nodeId int32) {
 	}
 	msg := protocol.SimpleMessageBuffer{}
 	msg.Init(define.Input_Kill)
-	msg.WriteMessage(conn)
+	master.connector.WriteTo(nodeId, &msg)
 	utils.LogI(fmt.Sprintf("Sent kill to nodeId %d", nodeId))
 }
 
@@ -29,6 +29,6 @@ func (master *Master) inputSend_call(nodeId int32, money int32) {
 	msg := protocol.SimpleMessageBuffer{}
 	msg.Init(define.Input_Send)
 	msg.WriteI32(money)
-	msg.WriteMessage(conn)
+	master.connector.WriteTo(nodeId, &msg)
 	utils.LogI(fmt.Sprintf("Sent inputSend to nodeId %d", nodeId))
 }

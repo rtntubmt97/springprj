@@ -59,7 +59,7 @@ func (mb SimpleMessageBuffer) ReadString() string {
 
 var magicBytes = []byte("xxDDxx")
 
-func (message *SimpleMessageBuffer) ReadMessage(reader io.Reader) error {
+func (message *SimpleMessageBuffer) Read(reader io.Reader) error {
 	// bufReader := bufio.NewReader(reader)
 	initBytes := make([]byte, len(magicBytes))
 	_, err := reader.Read(initBytes)
@@ -91,7 +91,7 @@ func (message *SimpleMessageBuffer) ReadMessage(reader io.Reader) error {
 	return nil
 }
 
-func (message *SimpleMessageBuffer) WriteMessage(writer io.Writer) error {
+func (message *SimpleMessageBuffer) Write(writer io.Writer) error {
 	writer.Write(magicBytes)
 
 	len := int32(message.Buf.Len())

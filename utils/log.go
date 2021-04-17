@@ -3,10 +3,14 @@ package utils
 import (
 	"fmt"
 	"log"
+	"os"
 	"runtime/debug"
 )
 
+var innerLog *log.Logger
+
 func init() {
+	innerLog = log.New(os.Stdout, "", log.Lshortfile)
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 }
 
@@ -15,15 +19,18 @@ func LogR(msg interface{}) {
 }
 
 func LogE(msg string) {
-	fmt.Printf("[logE] %s\n", msg)
+	innerLog.Output(2, fmt.Sprintf("[logE] %s\n", msg))
+	// fmt.Printf("[logE] %s\n", msg)
 }
 
 func LogD(msg string) {
-	fmt.Printf("[LogD] %s\n", msg)
+	innerLog.Output(2, fmt.Sprintf("[LogD] %s\n", msg))
+	// fmt.Printf("[LogD] %s\n", msg)
 }
 
 func LogI(msg string) {
-	fmt.Printf("[LogI] %s\n", msg)
+	innerLog.Output(2, fmt.Sprintf("[LogI] %s\n", msg))
+	// fmt.Printf("[LogI] %s\n", msg)
 }
 
 func PrintStack() {

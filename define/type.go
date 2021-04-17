@@ -1,5 +1,7 @@
 package define
 
+import "io"
+
 type MessageBuffer interface {
 	WriteI32(i int32) MessageBuffer
 
@@ -12,6 +14,14 @@ type MessageBuffer interface {
 	ReadI64() int64
 
 	ReadString() string
+}
+
+type Writeable interface {
+	Write(writer io.Writer) error
+}
+
+type Readable interface {
+	Read(reader io.Reader) error
 }
 
 type HandleFunc func(connId int32, msg MessageBuffer)

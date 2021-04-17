@@ -82,7 +82,7 @@ func main() {
 	for {
 		// input := getStdinInput()
 		inputRaw, err := reader.ReadString('\n')
-		// fmt.Print(inputRaw)
+		fmt.Print(inputRaw)
 
 		if err != io.EOF {
 			if inputRaw[0] == ';' {

@@ -16,7 +16,7 @@ func LogE(msg string) {
     // innerLog.Output(2, fmt.Sprintf("[logE] %s\n", msg))
 }
 ```
-... similar to LogI, LogD
+... similar to LogI, LogD  
 **Don't turn off logR**
 This logger is being used to print the result, so don't turn it off
 **Input**

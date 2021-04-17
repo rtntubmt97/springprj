@@ -52,8 +52,10 @@ func (node *Node) inputReceive_handle(connId int32, msg define.MessageBuffer) {
 
 func (node *Node) inputReceiveAll_handle(connId int32, msg define.MessageBuffer) {
 	utils.LogI(fmt.Sprintf("Node %d Received inputReceiveAll signal", node.id))
-	for _, channel := range node.moneyChannels {
-		if len(channel) == 0 {
+	for connId, channel := range node.moneyChannels {
+		if connId == define.ObserverId ||
+			connId == define.MasterId ||
+			len(channel) == 0 {
 			continue
 		}
 		for len(channel) > 0 {

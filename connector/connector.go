@@ -10,12 +10,22 @@ import (
 	"github.com/rtntubmt97/springprj/utils"
 )
 
-type OtherInfo struct {
+type ParticipantType int32
+
+const (
+	MasterType   ParticipantType = 1
+	ObserverType ParticipantType = 2
+	NodeType     ParticipantType = 3
+)
+
+type ParticipantInfo struct {
+	ParticipantType
 	NodeId     int32
 	ListenPort int32
 }
 
 type Connector struct {
+	ParticipantType
 	id              int32
 	listenPort      int32
 	listener        net.Listener
@@ -23,12 +33,12 @@ type Connector struct {
 	handlers        map[define.ConnectorCmd]define.HandleFunc
 	writeOutMutexes map[int32]*sync.Mutex
 	rspMsgChannel   map[int32](chan define.MessageBuffer)
-	OtherInfos      map[int32]*OtherInfo
+	OtherInfos      map[int32]*ParticipantInfo
 	readyMutex      *sync.Mutex
 	afterAccept     AfterAccept
 }
 
-type AfterAccept func(connInfo OtherInfo)
+type AfterAccept func(connInfo ParticipantInfo)
 
 func (connector *Connector) Init(id int32) {
 	connector.id = id
@@ -36,7 +46,7 @@ func (connector *Connector) Init(id int32) {
 	connector.handlers = make(map[define.ConnectorCmd]define.HandleFunc)
 	connector.writeOutMutexes = make(map[int32]*sync.Mutex)
 	connector.rspMsgChannel = make(map[int32]chan define.MessageBuffer)
-	connector.OtherInfos = make(map[int32]*OtherInfo)
+	connector.OtherInfos = make(map[int32]*ParticipantInfo)
 
 	utils.LogI(fmt.Sprintf("connId %d initiated", id))
 	connector.readyMutex = new(sync.Mutex)
@@ -66,12 +76,12 @@ func (connector *Connector) IsConnected(otherId int32) bool {
 	return ok
 }
 
-func (connector *Connector) initNewConn(otherInfo OtherInfo, conn net.Conn) {
-	connId := otherInfo.NodeId
+func (connector *Connector) initNewConn(peerInfo ParticipantInfo, conn net.Conn) {
+	connId := peerInfo.NodeId
 	connector.ConnectedConns[connId] = conn
 	connector.writeOutMutexes[connId] = new(sync.Mutex)
 	connector.rspMsgChannel[connId] = make(chan define.MessageBuffer)
-	connector.OtherInfos[connId] = &otherInfo
+	connector.OtherInfos[connId] = &peerInfo
 }
 
 func (connector *Connector) Connect(id int32, port int32) {
@@ -83,21 +93,22 @@ func (connector *Connector) Connect(id int32, port int32) {
 		return
 	}
 
-	connId := connector.greeting_wcall(conn)
+	err, info := connector.greeting_wcall(conn)
+	connId := info.NodeId
 
-	if _, exist := connector.ConnectedConns[connId]; exist {
-		utils.LogE(fmt.Sprintf("connId %d existed", connId))
+	if err != nil {
+		utils.LogE(err.Error())
 		return
 	}
-	if connId == -1 {
-		utils.LogE("Invalid message")
+	if _, exist := connector.ConnectedConns[connId]; exist {
+		utils.LogE(fmt.Sprintf("connId %d existed", connId))
 		return
 	}
 	if connId != id {
 		utils.LogE(fmt.Sprintf("Invalid connId %d", connId))
 		return
 	}
-	otherInfo := OtherInfo{NodeId: id, ListenPort: port}
+	otherInfo := ParticipantInfo{info.ParticipantType, connId, port}
 
 	utils.LogI(fmt.Sprintf("Connector %d connected conn %d", connector.id, otherInfo))
 	connector.initNewConn(otherInfo, conn)
@@ -153,7 +164,7 @@ func (connector *Connector) Listen(port int) {
 	}
 }
 
-func (connector *Connector) Handle(otherInfo OtherInfo, conn net.Conn) {
+func (connector *Connector) Handle(otherInfo ParticipantInfo, conn net.Conn) {
 	for {
 		// utils.LogI(fmt.Sprintf("%d run Handle", connector.id))
 
@@ -170,9 +181,10 @@ func (connector *Connector) Handle(otherInfo OtherInfo, conn net.Conn) {
 	}
 }
 
-func (connector *Connector) greeting_wcall(conn net.Conn) int32 {
+func (connector *Connector) greeting_wcall(conn net.Conn) (error, ParticipantInfo) {
 	msg := protocol.SimpleMessageBuffer{}
 	msg.Init(define.Greeting)
+	msg.WriteI32(int32(connector.ParticipantType))
 	msg.WriteI32(connector.id)
 	msg.WriteI32(connector.listenPort)
 	msg.Write(conn)
@@ -182,27 +194,35 @@ func (connector *Connector) greeting_wcall(conn net.Conn) int32 {
 
 	cmd := define.ConnectorCmd(rspMsg.ReadI32())
 	if cmd != define.GreetingRsp {
-		return -1
+		return define.ErrFailGreeting, ParticipantInfo{}
 	}
 
-	return rspMsg.ReadI32()
+	cType := rspMsg.ReadI32()
+	cId := rspMsg.ReadI32()
+
+	return nil, ParticipantInfo{ParticipantType(cType), cId, 0}
 }
 
-func (connector *Connector) greeting_whandle(msg define.MessageBuffer, conn net.Conn) (error, OtherInfo) {
+func (connector *Connector) greeting_whandle(msg define.MessageBuffer, conn net.Conn) (error, ParticipantInfo) {
 	cmd := define.ConnectorCmd(msg.ReadI32())
 	if cmd != define.Greeting {
-		return define.ErrWrongCmd, OtherInfo{}
+		return define.ErrWrongCmd, ParticipantInfo{}
 	}
 
+	typeFromGreeting := ParticipantType(msg.ReadI32())
 	idFromGreeting := msg.ReadI32()
 	portFromGreeting := msg.ReadI32()
 
 	rspMsg := protocol.SimpleMessageBuffer{}
 	rspMsg.Init(define.GreetingRsp)
+	rspMsg.WriteI32(int32(connector.ParticipantType))
 	rspMsg.WriteI32(connector.id)
 	rspMsg.Write(conn)
 
-	return nil, OtherInfo{NodeId: idFromGreeting, ListenPort: portFromGreeting}
+	return nil, ParticipantInfo{
+		ParticipantType: typeFromGreeting,
+		NodeId:          idFromGreeting,
+		ListenPort:      portFromGreeting}
 }
 
 func (connector *Connector) WriteTo(connId int32, msg define.Writeable) {

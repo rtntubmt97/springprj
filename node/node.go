@@ -30,6 +30,7 @@ func (node *Node) Init(id int32) {
 	node.id = id
 	connector := connectorPkg.Connector{}
 	connector.Init(id)
+	connector.ParticipantType = connectorPkg.NodeType
 
 	connector.SetAfterAccept(node.afterAccept)
 
@@ -70,6 +71,10 @@ func (node *Node) ConnectMaster() {
 	node.Connect(define.MasterId, define.MasterPort)
 }
 
+func (node *Node) ConnectObserver() {
+	node.Connect(define.ObserverId, define.ObserverPort)
+}
+
 func (node *Node) ConnectPeers() {
 	otherNodeListenPorts := node.RequestInfo_wcall()
 	for nodeId, port := range otherNodeListenPorts {
@@ -92,6 +97,6 @@ func (node *Node) WaitRsp(connId int32) define.MessageBuffer {
 	return node.connector.WaitRsp(connId)
 }
 
-func (node *Node) afterAccept(conInfo connector.OtherInfo) {
+func (node *Node) afterAccept(conInfo connector.ParticipantInfo) {
 	node.moneyChannels[conInfo.NodeId] = make(chan MoneyTokenInfo, 1000)
 }

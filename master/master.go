@@ -14,6 +14,7 @@ func (master *Master) Init() {
 	master.id = define.MasterId
 	master.connector = connectorPkg.Connector{}
 	master.connector.Init(define.MasterId)
+	master.connector.ParticipantType = connectorPkg.MasterType
 
 	master.connector.SetHandleFunc(define.RequestInfo, master.requestInfo_whandle)
 }

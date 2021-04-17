@@ -17,13 +17,13 @@ func main() {
 
 	id, err := strconv.Atoi(os.Args[1])
 	if err != nil {
-		utils.LogE("Invalid port argument")
+		utils.LogE("Invalid id argument")
 		return
 	}
 
 	initMoney, err := strconv.Atoi(os.Args[2])
 	if err != nil {
-		utils.LogE("Invalid port argument")
+		utils.LogE("Invalid initMoney argument")
 		return
 	}
 
@@ -36,6 +36,7 @@ func main() {
 	time.Sleep(100 * time.Millisecond)
 	node.WaitReady()
 	node.ConnectMaster()
+	node.ConnectObserver()
 	node.ConnectPeers()
 
 	time.Sleep(999 * time.Hour)

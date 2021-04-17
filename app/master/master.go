@@ -45,6 +45,17 @@ func getStdinInput() []string {
 	return splitInput
 }
 
+func createObserver() {
+	exeCmd := exec.Command("go", "run", "app/observer/observer.go", "somethingtohtop")
+	// exeCmd := exec.Command("./node.exe", id, initMoney, "somethingtohtop")
+	exeCmd.Stdout = os.Stdout
+	exeCmd.Stderr = os.Stderr
+	err := exeCmd.Start()
+	if err != nil {
+		utils.LogE(err.Error())
+	}
+}
+
 func createNode(id string, initMoney string) {
 	exeCmd := exec.Command("go", "run", "app/node/node.go", id, initMoney, "somethingtohtop")
 	// exeCmd := exec.Command("./node.exe", id, initMoney, "somethingtohtop")
@@ -58,8 +69,10 @@ func createNode(id string, initMoney string) {
 
 var masterNode master.Master
 
+// var observerNode observer.Observer
+
 func main() {
-	file, err := os.Open("input.txt")
+	file, err := os.Open("input.ini")
 	if err != nil {
 		utils.LogE(err.Error())
 		return
@@ -71,7 +84,7 @@ func main() {
 		inputRaw, err := reader.ReadString('\n')
 
 		if err != io.EOF {
-			if inputRaw[0] == '#' {
+			if inputRaw[0] == ';' {
 				continue
 			}
 			if err != nil {
@@ -93,6 +106,11 @@ func main() {
 			masterNode = master.Master{}
 			masterNode.Init()
 			go masterNode.Listen()
+			time.Sleep(1 * time.Second)
+			createObserver()
+			// observerNode = observer.Observer{}
+			// observerNode.Init()
+			// go observerNode.Listen()
 			time.Sleep(1 * time.Second)
 
 		case KillAll:

@@ -109,3 +109,17 @@ func (node *Node) Send_wcall(receiver int32, money int32) {
 	}
 	node.money -= int64(money)
 }
+
+func (node *Node) SendToken_call(connId int32) {
+	msg := protocol.SimpleMessageBuffer{}
+	msg.Init(define.SendToken)
+	node.connector.WriteTo(connId, &msg)
+	// msg.Write(conn)
+	utils.LogI(fmt.Sprintf("Sent token to node %d", connId))
+}
+
+func (node *Node) propagateToken() {
+	for nodeId := range node.connector.ConnectedConns {
+		node.SendToken_call(nodeId)
+	}
+}

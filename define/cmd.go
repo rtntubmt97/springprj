@@ -11,18 +11,23 @@ const (
 	GreetingRsp
 	RequestInfo
 	RequestInfoRsp
-	StartMaster
-	KillAll
+	// StartMaster
+	// KillAll
 	CreateNode
 	Send
 	SendRsp
 	// Receive
 	// ReceiveAll
-	BeginSnapshot
+	// BeginSnapshot
+	SendToken
 	CollectState
-	PrintSnapshot
+	CollectStateRsp
+	BeginSnapshot
 	Input_Send
 	Input_Recieve
 	Input_RecieveAll
 	Input_Kill
+	Input_BeginSnapshot
+	Input_CollectState
+	Input_PrintSnapshot
 )

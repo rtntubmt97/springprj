@@ -10,12 +10,18 @@ type Node struct {
 	id            int32
 	money         int64
 	connector     connectorPkg.Connector
-	moneyChannels map[int32](chan MoneyTokenInfo)
+	moneyChannels map[int32]([]MoneyTokenInfo)
+	snapShot      SnapShot
 }
 
 type MoneyTokenInfo struct {
 	SenderId int32
 	Money    int32
+}
+
+type SnapShot struct {
+	Money    int64
+	Channels map[int32][]int32
 }
 
 func (info MoneyTokenInfo) IsToken() bool {
@@ -42,9 +48,12 @@ func (node *Node) Init(id int32) {
 	connector.SetHandleFunc(define.Send, node.send_whandle)
 	connector.SetHandleFunc(define.Input_Recieve, node.inputReceive_handle)
 	connector.SetHandleFunc(define.Input_RecieveAll, node.inputReceiveAll_handle)
+	connector.SetHandleFunc(define.Input_BeginSnapshot, node.inputPrintSnapshot_handle)
+	connector.SetHandleFunc(define.SendToken, node.sendToken_handle)
+	connector.SetHandleFunc(define.CollectState, node.collectState_whandle)
 
 	node.connector = connector
-	node.moneyChannels = make(map[int32](chan MoneyTokenInfo))
+	node.moneyChannels = make(map[int32]([]MoneyTokenInfo))
 }
 
 func (node *Node) GetId() int32 {
@@ -85,7 +94,7 @@ func (node *Node) ConnectPeers() {
 			continue
 		}
 		node.Connect(nodeId, port)
-		node.moneyChannels[nodeId] = make(chan MoneyTokenInfo, 1000)
+		node.moneyChannels[nodeId] = make([]MoneyTokenInfo, 0)
 	}
 }
 
@@ -98,5 +107,5 @@ func (node *Node) WaitRsp(connId int32) define.MessageBuffer {
 }
 
 func (node *Node) afterAccept(conInfo connector.ParticipantInfo) {
-	node.moneyChannels[conInfo.NodeId] = make(chan MoneyTokenInfo, 1000)
+	node.moneyChannels[conInfo.NodeId] = make([]MoneyTokenInfo, 0)
 }

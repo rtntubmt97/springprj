@@ -10,58 +10,61 @@ import (
 )
 
 func (node *Node) sendInt32_handle(connId int32, msg define.MessageBuffer) {
-	// fmt.Println("SendInt32_handle run!")
 	utils.LogI(fmt.Sprintf("Received Int32 %d", msg.ReadI32()))
 }
 
 func (node *Node) sendInt64_handle(connId int32, msg define.MessageBuffer) {
-	// fmt.Println("SendInt64_handle run!")
 	utils.LogI(fmt.Sprintf("Received Int64 %d", msg.ReadI64()))
 }
 
 func (node *Node) sendString_handle(connId int32, msg define.MessageBuffer) {
-	// fmt.Println("SendString_handle run!")
 	utils.LogI(fmt.Sprintf("Received String %s", msg.ReadString()))
 }
 
 func (node *Node) kill_handle(connId int32, msg define.MessageBuffer) {
-	// fmt.Println("SendString_handle run!")
 	utils.LogI(fmt.Sprintf("Node %d Received kill_handle signal", node.id))
 	os.Exit(0)
 }
 
 func (node *Node) inputReceive_handle(connId int32, msg define.MessageBuffer) {
-	// fmt.Println("SendString_handle run!")
 	sender := msg.ReadI32()
 	utils.LogI(fmt.Sprintf("Node %d Received inputReceive signal, sender is %d", node.id, sender))
-	var selectedChannel chan MoneyTokenInfo
+	var selectedChannel []MoneyTokenInfo
 	if sender != int32(-1) {
 		selectedChannel = node.moneyChannels[sender]
 	} else {
-		for _, channel := range node.moneyChannels {
+		for id, channel := range node.moneyChannels {
 			if len(channel) != 0 {
+				sender = id
 				selectedChannel = channel
 				break
 			}
 		}
 	}
 
-	moneyTokenInfo := <-selectedChannel
+	moneyTokenInfo := selectedChannel[0]
+	node.moneyChannels[sender] = selectedChannel[1:]
 	node.processInfo(moneyTokenInfo, true)
 }
 
 func (node *Node) inputReceiveAll_handle(connId int32, msg define.MessageBuffer) {
 	utils.LogI(fmt.Sprintf("Node %d Received inputReceiveAll signal", node.id))
-	for connId, channel := range node.moneyChannels {
-		if connId == define.ObserverId ||
-			connId == define.MasterId ||
+	count := 0
+	for nodeId, channel := range node.moneyChannels {
+		if nodeId == define.ObserverId ||
+			nodeId == define.MasterId ||
 			len(channel) == 0 {
 			continue
 		}
-		for len(channel) > 0 {
-			moneyTokenInfo := <-channel
+		for i := 0; i < len(channel); i++ {
+			count++
+			if count > 5 {
+				break
+			}
+			moneyTokenInfo := channel[i]
 			node.processInfo(moneyTokenInfo, false)
 		}
+		node.moneyChannels[nodeId] = channel[:0]
 	}
 
 }
@@ -69,21 +72,42 @@ func (node *Node) inputReceiveAll_handle(connId int32, msg define.MessageBuffer)
 func (node *Node) processInfo(info MoneyTokenInfo, print bool) {
 	money := info.Money
 	sender := info.SenderId
+	var output define.ProjectOutput
 
 	if info.IsToken() {
+		utils.LogI(fmt.Sprintf("Node %d received token from %d", node.id, sender))
+		node.updateSnapShot()
+		output = utils.CreateReceiveSnapshotOutput(sender)
 	} else {
 		node.money += int64(money)
 		utils.LogI(fmt.Sprintf("Node %d added %d money from sender %d", node.id, money, sender))
+		output = utils.CreateTransferOutput(sender, money)
 	}
 
 	if print {
-		output := utils.CreateTransferOutput(sender, money)
 		utils.LogR(output)
 	}
 }
 
+func (node *Node) updateSnapShot() {
+	newSnapShot := SnapShot{}
+	newSnapShot.Money = node.money
+	channels := make(map[int32][]int32)
+	for nodeId, channel := range node.moneyChannels {
+		moneys := make([]int32, 0)
+		for _, money := range channel {
+			if money.Money == -1 {
+				continue
+			}
+			moneys = append(moneys, money.Money)
+		}
+		channels[nodeId] = moneys
+	}
+	newSnapShot.Channels = channels
+	node.snapShot = newSnapShot
+}
+
 func (node *Node) inputSend_handle(connId int32, msg define.MessageBuffer) {
-	// fmt.Println("SendString_handle run!")
 	receiver := msg.ReadI32()
 	money := msg.ReadI32()
 	utils.LogI(fmt.Sprintf("Node %d Received inputSend signal, receiver is %d, money is %d", node.id, receiver, money))
@@ -95,11 +119,56 @@ func (node *Node) inputSend_handle(connId int32, msg define.MessageBuffer) {
 
 }
 
+func (node *Node) inputPrintSnapshot_handle(connId int32, msg define.MessageBuffer) {
+	utils.LogI(fmt.Sprintf("Node %d Received inputPrintSnapshot signal", node.id))
+	utils.LogR(utils.CreateBeginSnapshotOutput(node.id))
+	node.updateSnapShot()
+	node.propagateToken()
+}
+
+func (node *Node) sendToken_handle(connId int32, msg define.MessageBuffer) {
+	utils.LogI(fmt.Sprintf("Node %d Received sendToken from node %d", node.id, connId))
+	newInfo := MoneyTokenInfo{SenderId: connId, Money: -1}
+	node.moneyChannels[connId] = append(node.moneyChannels[connId], newInfo)
+}
+
+func (node *Node) collectState_whandle(connId int32, msg define.MessageBuffer) {
+	utils.LogI(fmt.Sprintf("Node %d Received collectState", node.id))
+	rspMsg := protocol.SimpleMessageBuffer{}
+	rspMsg.Init(define.Rsp)
+	rspMsg.WriteI32(int32(define.CollectStateRsp))
+
+	snapShot := node.snapShot
+	rspMsg.WriteI64(snapShot.Money)
+	rspMsg.WriteI32(int32(len(snapShot.Channels)))
+	for channelId, channel := range snapShot.Channels {
+		rspMsg.WriteI32(channelId)
+		// moneySlice := getMoneySlice(channel)
+		rspMsg.WriteI32(int32(len(channel)))
+		for _, money := range channel {
+			rspMsg.WriteI32(money)
+		}
+	}
+	node.connector.WriteTo(connId, &rspMsg)
+}
+
+// func getMoneySlice(infos []MoneyTokenInfo) []int32 {
+// 	ret := make([]int32, 0)
+// 	for _, info := range infos {
+// 		if info.IsToken() {
+// 			continue
+// 		}
+// 		ret = append(ret, info.Money)
+// 	}
+// 	return ret
+// }
+
 func (node *Node) send_whandle(connId int32, msg define.MessageBuffer) {
-	// fmt.Println("SendString_handle run!")
 	money := msg.ReadI32()
 	utils.LogI(fmt.Sprintf("Node %d Received money %d from node %d", node.id, money, connId))
-	node.moneyChannels[connId] <- MoneyTokenInfo{SenderId: connId, Money: money}
+	newInfo := MoneyTokenInfo{SenderId: connId, Money: money}
+	node.moneyChannels[connId] = append(node.moneyChannels[connId], newInfo)
+	// node.moneyChannels[connId] <- MoneyTokenInfo{SenderId: connId, Money: money}
 	rspMsg := new(protocol.SimpleMessageBuffer)
 	rspMsg.Init(define.Rsp)
 	rspMsg.WriteI32(int32(define.SendRsp))

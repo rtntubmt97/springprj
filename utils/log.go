@@ -48,3 +48,13 @@ func CreateTokenOutput(sender int32) define.ProjectOutput {
 	msg := fmt.Sprintf("%d SnapshotToken -1", sender)
 	return define.ProjectOutput(msg)
 }
+
+func CreateBeginSnapshotOutput(beginer int32) define.ProjectOutput {
+	msg := fmt.Sprintf("BeginSnapshot %d", beginer)
+	return define.ProjectOutput(msg)
+}
+
+func CreateReceiveSnapshotOutput(beginer int32) define.ProjectOutput {
+	msg := fmt.Sprintf("%d SnapshotToken -1", beginer)
+	return define.ProjectOutput(msg)
+}

@@ -82,6 +82,7 @@ func main() {
 	for {
 		// input := getStdinInput()
 		inputRaw, err := reader.ReadString('\n')
+		// fmt.Print(inputRaw)
 
 		if err != io.EOF {
 			if inputRaw[0] == ';' {
@@ -123,6 +124,7 @@ func main() {
 		case CreateNode:
 			utils.LogI(inputRaw)
 			createNode(input[1], input[2])
+			time.Sleep(900 * time.Millisecond)
 
 		case Send:
 			utils.LogI(inputRaw)
@@ -147,9 +149,22 @@ func main() {
 			utils.LogI(inputRaw)
 			masterNode.InputReceiveAll_call()
 
+		case BeginSnapshot:
+			utils.LogI(inputRaw)
+			startNodeId, _ := strconv.Atoi(input[1])
+			masterNode.InputBeginSnapshot_call(int32(startNodeId))
+
+		case CollectState:
+			utils.LogI(inputRaw)
+			masterNode.InputCollectState_call()
+
+		case PrintSnapshot:
+			utils.LogI(inputRaw)
+			masterNode.InputPrintSnapshot_call()
+
 		default:
 		}
-		time.Sleep(1 * time.Second)
+		time.Sleep(100 * time.Millisecond)
 		if err == io.EOF {
 			break
 		}

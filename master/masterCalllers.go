@@ -49,9 +49,38 @@ func (master *Master) InputReceive_call(receiver int32, sender int32) {
 
 func (master *Master) InputReceiveAll_call() {
 	for connId := range master.connector.ConnectedConns {
+		if connId == define.MasterId || connId == define.ObserverId {
+			continue
+		}
 		msg := protocol.SimpleMessageBuffer{}
 		msg.Init(define.Input_RecieveAll)
 		master.connector.WriteTo(connId, &msg)
 		utils.LogI(fmt.Sprintf("Sent inputReceiveAll to nodeId %d", connId))
 	}
+}
+
+func (master *Master) InputBeginSnapshot_call(startNodeId int32) {
+	conn := master.connector.ConnectedConns[startNodeId]
+	if conn == nil {
+		utils.LogE("nil conn")
+		return
+	}
+	msg := protocol.SimpleMessageBuffer{}
+	msg.Init(define.Input_BeginSnapshot)
+	master.connector.WriteTo(startNodeId, &msg)
+	utils.LogI(fmt.Sprintf("Sent InputBeginSnapshot to nodeId %d", startNodeId))
+}
+
+func (master *Master) InputCollectState_call() {
+	msg := protocol.SimpleMessageBuffer{}
+	msg.Init(define.Input_CollectState)
+	master.connector.WriteTo(define.ObserverId, &msg)
+	utils.LogI(fmt.Sprintf("Sent InputCollectState to nodeId %d", define.ObserverId))
+}
+
+func (master *Master) InputPrintSnapshot_call() {
+	msg := protocol.SimpleMessageBuffer{}
+	msg.Init(define.Input_CollectState)
+	master.connector.WriteTo(define.ObserverId, &msg)
+	utils.LogI(fmt.Sprintf("Sent InputPrintSnapshot to nodeId %d", define.ObserverId))
 }

@@ -81,7 +81,7 @@ var masterNode master.Master
 // var observerNode observer.Observer
 
 func main() {
-	configPath := ""
+	configPath := "config.json"
 	if len(os.Args) > 1 {
 		configPath = os.Args[1]
 	}
@@ -96,6 +96,16 @@ func main() {
 	define.ObserverId = utils.LoadedConfig.ObserverId
 	define.ObserverPort = utils.LoadedConfig.ObserverPort
 	utils.UseLog = utils.LoadedConfig.UseLog
+
+	if !utils.IsPortAvailable(int(define.MasterPort)) {
+		fmt.Printf("Master node cannot using port %d", define.MasterPort)
+		return
+	}
+
+	if !utils.IsPortAvailable(int(define.ObserverPort)) {
+		fmt.Printf("Observer node cannot using port %d", define.ObserverPort)
+		return
+	}
 
 	file, err := os.Open(utils.LoadedConfig.InputFile)
 	if err != nil {
@@ -118,7 +128,9 @@ func main() {
 			}
 		}
 
-		fmt.Print(inputRaw)
+		if utils.LoadedConfig.PrintInput {
+			fmt.Print(inputRaw)
+		}
 
 		input := strings.Split(inputRaw, " ")
 		for i, ele := range input {

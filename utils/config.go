@@ -11,6 +11,7 @@ type Config struct {
 	InputFile    string
 	UseBin       bool
 	UseLog       bool
+	PrintInput   bool
 	MasterId     int32
 	MasterPort   int32
 	ObserverId   int32

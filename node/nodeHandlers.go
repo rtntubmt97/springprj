@@ -21,12 +21,13 @@ func (node *Node) sendString_handle(connId int32, msg define.MessageBuffer) {
 	utils.LogI(fmt.Sprintf("Received String %s", msg.ReadString()))
 }
 
-func (node *Node) kill_handle(connId int32, msg define.MessageBuffer) {
+func (node *Node) inputKill_whandle(connId int32, msg define.MessageBuffer) {
 	utils.LogI(fmt.Sprintf("Node %d Received kill_handle signal", node.id))
+	node.connector.SendAckRsp(connId, define.Input_KillRsp)
 	os.Exit(0)
 }
 
-func (node *Node) inputReceive_handle(connId int32, msg define.MessageBuffer) {
+func (node *Node) inputReceive_whandle(connId int32, msg define.MessageBuffer) {
 	sender := msg.ReadI32()
 	utils.LogI(fmt.Sprintf("Node %d Received inputReceive signal, sender is %d", node.id, sender))
 	var selectedChannel []MoneyTokenInfo
@@ -45,9 +46,11 @@ func (node *Node) inputReceive_handle(connId int32, msg define.MessageBuffer) {
 	moneyTokenInfo := selectedChannel[0]
 	node.moneyChannels[sender] = selectedChannel[1:]
 	node.processInfo(moneyTokenInfo, true)
+
+	node.connector.SendAckRsp(connId, define.Input_RecieveRsp)
 }
 
-func (node *Node) inputReceiveAll_handle(connId int32, msg define.MessageBuffer) {
+func (node *Node) inputReceiveAll_whandle(connId int32, msg define.MessageBuffer) {
 	utils.LogI(fmt.Sprintf("Node %d Received inputReceiveAll signal", node.id))
 	count := 0
 	for nodeId, channel := range node.moneyChannels {
@@ -67,6 +70,7 @@ func (node *Node) inputReceiveAll_handle(connId int32, msg define.MessageBuffer)
 		node.moneyChannels[nodeId] = channel[:0]
 	}
 
+	node.connector.SendAckRsp(connId, define.Input_RecieveAllRsp)
 }
 
 func (node *Node) processInfo(info MoneyTokenInfo, print bool) {
@@ -107,7 +111,7 @@ func (node *Node) updateSnapShot() {
 	node.snapShot = newSnapShot
 }
 
-func (node *Node) inputSend_handle(connId int32, msg define.MessageBuffer) {
+func (node *Node) inputSend_whandle(connId int32, msg define.MessageBuffer) {
 	receiver := msg.ReadI32()
 	money := msg.ReadI32()
 	utils.LogI(fmt.Sprintf("Node %d Received inputSend signal, receiver is %d, money is %d", node.id, receiver, money))
@@ -117,19 +121,24 @@ func (node *Node) inputSend_handle(connId int32, msg define.MessageBuffer) {
 	}
 	node.Send_wcall(receiver, money)
 
+	node.connector.SendAckRsp(connId, define.Input_SendRsp)
 }
 
-func (node *Node) inputPrintSnapshot_handle(connId int32, msg define.MessageBuffer) {
+func (node *Node) inputBeginSnapshot_whandle(connId int32, msg define.MessageBuffer) {
 	utils.LogI(fmt.Sprintf("Node %d Received inputPrintSnapshot signal", node.id))
 	utils.LogR(utils.CreateBeginSnapshotOutput(node.id))
 	node.updateSnapShot()
 	node.propagateToken()
+
+	node.connector.SendAckRsp(connId, define.Input_BeginSnapshotRsp)
 }
 
-func (node *Node) sendToken_handle(connId int32, msg define.MessageBuffer) {
+func (node *Node) sendToken_whandle(connId int32, msg define.MessageBuffer) {
 	utils.LogI(fmt.Sprintf("Node %d Received sendToken from node %d", node.id, connId))
 	newInfo := MoneyTokenInfo{SenderId: connId, Money: -1}
 	node.moneyChannels[connId] = append(node.moneyChannels[connId], newInfo)
+
+	node.connector.SendAckRsp(connId, define.SendTokenRsp)
 }
 
 func (node *Node) collectState_whandle(connId int32, msg define.MessageBuffer) {
@@ -166,9 +175,10 @@ func (node *Node) send_whandle(connId int32, msg define.MessageBuffer) {
 	newInfo := MoneyTokenInfo{SenderId: connId, Money: money}
 	node.moneyChannels[connId] = append(node.moneyChannels[connId], newInfo)
 	// node.moneyChannels[connId] <- MoneyTokenInfo{SenderId: connId, Money: money}
-	rspMsg := new(protocol.SimpleMessageBuffer)
-	rspMsg.Init(define.Rsp)
-	rspMsg.WriteI32(int32(define.SendRsp))
-	node.connector.WriteTo(connId, rspMsg)
+	// rspMsg := new(protocol.SimpleMessageBuffer)
+	// rspMsg.Init(define.Rsp)
+	// rspMsg.WriteI32(int32(define.SendRsp))
+	// node.connector.WriteTo(connId, rspMsg)
 
+	node.connector.SendAckRsp(connId, define.SendRsp)
 }

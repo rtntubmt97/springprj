@@ -19,6 +19,7 @@ const (
 	GreetingRsp     ConnectorCmd = 125
 	RequestInfoRsp  ConnectorCmd = 126
 	SendRsp         ConnectorCmd = 128
+	SendTokenRsp    ConnectorCmd = 129
 	CollectStateRsp ConnectorCmd = 1210
 
 	Input_Send          ConnectorCmd = 211

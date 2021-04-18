@@ -236,3 +236,20 @@ func (connector *Connector) forwardRsp(connId int32, msg define.MessageBuffer) {
 func (connector *Connector) WaitRsp(connId int32) define.MessageBuffer {
 	return <-connector.rspMsgChannel[connId]
 }
+
+func (connector *Connector) SendAckRsp(connId int32, cmd define.ConnectorCmd) {
+	rspMsg := protocol.SimpleMessageBuffer{}
+	rspMsg.Init(define.Rsp)
+	rspMsg.WriteI32(int32(cmd))
+	connector.WriteTo(connId, &rspMsg)
+}
+
+func (connector *Connector) WaitAckRsp(nodeId int32, cmd define.ConnectorCmd) {
+	rspMsg := connector.WaitRsp(nodeId)
+	rspCmd := define.ConnectorCmd(rspMsg.ReadI32())
+	if cmd == rspCmd {
+		utils.LogI(fmt.Sprintf("Connecter %d received correct response for cmd %d", connector.id, cmd))
+	} else {
+		utils.LogI(fmt.Sprintf("Connecter %d  received %d, wrong response for cmd %d", connector.id, rspCmd, cmd))
+	}
+}

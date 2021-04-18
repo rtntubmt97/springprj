@@ -25,9 +25,9 @@ func (observer *Observer) Init() {
 	observer.connector.Init(define.ObserverId)
 	observer.connector.ParticipantType = connectorPkg.ObserverType
 
-	observer.connector.SetHandleFunc(define.Input_Kill, observer.kill_handle)
+	observer.connector.SetHandleFunc(define.Input_Kill, observer.inputKill_whandle)
 	observer.connector.SetHandleFunc(define.Input_CollectState, observer.inputCollectState_whandle)
-	observer.connector.SetHandleFunc(define.Input_PrintSnapshot, observer.inputPrintSnapshot_handle)
+	observer.connector.SetHandleFunc(define.Input_PrintSnapshot, observer.inputPrintSnapshot_whandle)
 
 	observer.snapShots = make(map[int32]node.SnapShot)
 }
@@ -44,12 +44,13 @@ func (observer *Observer) ConnectMaster() {
 	observer.Connect(define.MasterId, define.MasterPort)
 }
 
-func (observer *Observer) kill_handle(connId int32, msg define.MessageBuffer) {
+func (observer *Observer) inputKill_whandle(connId int32, msg define.MessageBuffer) {
 	utils.LogI(fmt.Sprintf("Node %d Received kill signal", observer.id))
+	observer.connector.SendAckRsp(define.MasterId, define.Input_KillRsp)
 	os.Exit(0)
 }
 
-func (observer *Observer) inputPrintSnapshot_handle(connId int32, msg define.MessageBuffer) {
+func (observer *Observer) inputPrintSnapshot_whandle(connId int32, msg define.MessageBuffer) {
 	utils.LogI(fmt.Sprintf("Node %d Received inputPrintSnapshot signal", observer.id))
 
 	ret := strings.Builder{}
@@ -80,6 +81,7 @@ func (observer *Observer) inputPrintSnapshot_handle(connId int32, msg define.Mes
 	}
 	utils.LogR(define.ProjectOutput(ret.String()))
 
+	observer.connector.SendAckRsp(define.MasterId, define.Input_PrintSnapshotRsp)
 }
 
 func (observer *Observer) inputCollectState_whandle(connId int32, msg define.MessageBuffer) {
@@ -93,10 +95,7 @@ func (observer *Observer) inputCollectState_whandle(connId int32, msg define.Mes
 		observer.snapShots[peerId] = snapShot
 	}
 
-	rspMsg := protocol.SimpleMessageBuffer{}
-	rspMsg.Init(define.Rsp)
-	rspMsg.WriteI32(int32(define.Input_CollectStateRsp))
-	observer.connector.WriteTo(define.MasterId, &rspMsg)
+	observer.connector.SendAckRsp(define.MasterId, define.Input_CollectStateRsp)
 }
 
 func (observer *Observer) collectState_wcall(connId int32) node.SnapShot {

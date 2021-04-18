@@ -124,14 +124,14 @@ func main() {
 		case CreateNode:
 			utils.LogI(inputRaw)
 			createNode(input[1], input[2])
-			time.Sleep(900 * time.Millisecond)
+			time.Sleep(1000 * time.Millisecond)
 
 		case Send:
 			utils.LogI(inputRaw)
 			sender, _ := strconv.Atoi(input[1])
 			receiver, _ := strconv.Atoi(input[2])
 			money, _ := strconv.Atoi(input[3])
-			masterNode.InputSend_call(int32(sender), int32(receiver), int32(money))
+			masterNode.InputSend_wcall(int32(sender), int32(receiver), int32(money))
 
 		case Receive:
 			utils.LogI(inputRaw)
@@ -143,16 +143,16 @@ func main() {
 				receiver, _ = strconv.Atoi(input[1])
 				sender, _ = strconv.Atoi(input[2])
 			}
-			masterNode.InputReceive_call(int32(receiver), int32(sender))
+			masterNode.InputReceive_wcall(int32(receiver), int32(sender))
 
 		case ReceiveAll:
 			utils.LogI(inputRaw)
-			masterNode.InputReceiveAll_call()
+			masterNode.InputReceiveAll_wcall()
 
 		case BeginSnapshot:
 			utils.LogI(inputRaw)
 			startNodeId, _ := strconv.Atoi(input[1])
-			masterNode.InputBeginSnapshot_call(int32(startNodeId))
+			masterNode.InputBeginSnapshot_wcall(int32(startNodeId))
 
 		case CollectState:
 			utils.LogI(inputRaw)
@@ -160,11 +160,11 @@ func main() {
 
 		case PrintSnapshot:
 			utils.LogI(inputRaw)
-			masterNode.InputPrintSnapshot_call()
+			masterNode.InputPrintSnapshot_wcall()
 
 		default:
 		}
-		time.Sleep(100 * time.Millisecond)
+		// time.Sleep(100 * time.Millisecond)
 		if err == io.EOF {
 			break
 		}

@@ -1,0 +1,10 @@
+{
+    "IsProduction": false,
+    "UseBin": false,
+    "InputFile" : "input.ini",
+    "UseLog": true,
+    "MasterId": 823412,
+    "MasterPort": 9000,
+    "ObserverId": 823413,
+    "ObserverPort": 9001
+}

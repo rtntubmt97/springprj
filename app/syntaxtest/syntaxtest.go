@@ -2,6 +2,9 @@ package main
 
 import (
 	"fmt"
+
+	"github.com/rtntubmt97/springprj/define"
+	"github.com/rtntubmt97/springprj/utils"
 )
 
 type TestInterface interface {
@@ -24,10 +27,7 @@ type Wraper struct {
 }
 
 func main() {
-	m := make(map[int32]bool)
-	m[0] = false
-	delete(m, 0)
-	a, exist := m[0]
-	fmt.Println(a)
-	fmt.Println(exist)
+	_, config := utils.ReloadConfig("")
+	fmt.Println(config.IsProduction)
+	fmt.Println(define.MasterId)
 }

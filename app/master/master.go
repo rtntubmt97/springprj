@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/rtntubmt97/springprj/define"
 	"github.com/rtntubmt97/springprj/master"
 	"github.com/rtntubmt97/springprj/utils"
 )
@@ -45,9 +46,13 @@ func getStdinInput() []string {
 	return splitInput
 }
 
-func createObserver() {
-	exeCmd := exec.Command("go", "run", "app/observer/observer.go", "somethingtohtop")
-	// exeCmd := exec.Command("./node.exe", id, initMoney, "somethingtohtop")
+func createObserver(configPath string) {
+	var exeCmd *exec.Cmd
+	if utils.LoadedConfig.UseBin {
+		exeCmd = exec.Command("bin/observer.go", configPath, "somethingtohtop")
+	} else {
+		exeCmd = exec.Command("go", "run", "app/observer/observer.go", configPath, "somethingtohtop")
+	}
 	exeCmd.Stdout = os.Stdout
 	exeCmd.Stderr = os.Stderr
 	err := exeCmd.Start()
@@ -56,9 +61,13 @@ func createObserver() {
 	}
 }
 
-func createNode(id string, initMoney string) {
-	exeCmd := exec.Command("go", "run", "app/node/node.go", id, initMoney, "somethingtohtop")
-	// exeCmd := exec.Command("./node.exe", id, initMoney, "somethingtohtop")
+func createNode(configPath string, id string, initMoney string) {
+	var exeCmd *exec.Cmd
+	if utils.LoadedConfig.UseBin {
+		exeCmd = exec.Command("bin/node.go", configPath, id, initMoney, "somethingtohtop")
+	} else {
+		exeCmd = exec.Command("go", "run", "app/node/node.go", configPath, id, initMoney, "somethingtohtop")
+	}
 	exeCmd.Stdout = os.Stdout
 	exeCmd.Stderr = os.Stderr
 	err := exeCmd.Start()
@@ -72,7 +81,23 @@ var masterNode master.Master
 // var observerNode observer.Observer
 
 func main() {
-	file, err := os.Open("input.ini")
+	configPath := ""
+	if len(os.Args) > 1 {
+		configPath = os.Args[1]
+	}
+
+	err, _ := utils.ReloadConfig(configPath)
+	if err != nil {
+		fmt.Println("invalid config path")
+	}
+
+	define.MasterId = utils.LoadedConfig.MasterId
+	define.MasterPort = utils.LoadedConfig.MasterPort
+	define.ObserverId = utils.LoadedConfig.ObserverId
+	define.ObserverPort = utils.LoadedConfig.ObserverPort
+	utils.UseLog = utils.LoadedConfig.UseLog
+
+	file, err := os.Open(utils.LoadedConfig.InputFile)
 	if err != nil {
 		utils.LogE(err.Error())
 		return
@@ -109,10 +134,7 @@ func main() {
 			masterNode.Init()
 			go masterNode.Listen()
 			time.Sleep(1 * time.Second)
-			createObserver()
-			// observerNode = observer.Observer{}
-			// observerNode.Init()
-			// go observerNode.Listen()
+			createObserver(configPath)
 			time.Sleep(1 * time.Second)
 
 		case KillAll:
@@ -124,7 +146,7 @@ func main() {
 
 		case CreateNode:
 			utils.LogI(inputRaw)
-			createNode(input[1], input[2])
+			createNode(configPath, input[1], input[2])
 			time.Sleep(1000 * time.Millisecond)
 
 		case Send:

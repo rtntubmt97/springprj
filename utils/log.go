@@ -10,13 +10,13 @@ import (
 )
 
 var innerLog *log.Logger
-var useLog bool
+var UseLog bool
 
 func init() {
 	innerLog = log.New(os.Stdout, "", log.Lshortfile)
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
-	useLog = false
+	UseLog = false
 }
 
 func LogR(msg define.ProjectOutput) {
@@ -24,21 +24,21 @@ func LogR(msg define.ProjectOutput) {
 }
 
 func LogE(msg string) {
-	if !useLog {
+	if !UseLog {
 		return
 	}
 	innerLog.Output(2, fmt.Sprintf("[logE] %s\n", msg))
 }
 
 func LogD(msg string) {
-	if !useLog {
+	if !UseLog {
 		return
 	}
 	innerLog.Output(2, fmt.Sprintf("[LogD] %s\n", msg))
 }
 
 func LogI(msg string) {
-	if !useLog {
+	if !UseLog {
 		return
 	}
 	innerLog.Output(2, fmt.Sprintf("[LogI] %s\n", msg))

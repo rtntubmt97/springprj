@@ -20,8 +20,8 @@ type MoneyTokenInfo struct {
 }
 
 type SnapShot struct {
-	Money    int64
-	Channels map[int32][]int32
+	NodeMoney     int64
+	ChannelMoneys map[int32]int64
 }
 
 func (info MoneyTokenInfo) IsToken() bool {

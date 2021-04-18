@@ -82,7 +82,6 @@ func main() {
 	for {
 		// input := getStdinInput()
 		inputRaw, err := reader.ReadString('\n')
-		fmt.Print(inputRaw)
 
 		if err != io.EOF {
 			if inputRaw[0] == ';' {
@@ -93,6 +92,7 @@ func main() {
 				break
 			}
 		}
+		fmt.Print(inputRaw)
 
 		input := strings.Split(inputRaw, " ")
 		for i, ele := range input {
@@ -156,7 +156,7 @@ func main() {
 
 		case CollectState:
 			utils.LogI(inputRaw)
-			masterNode.InputCollectState_call()
+			masterNode.InputCollectState_wcall()
 
 		case PrintSnapshot:
 			utils.LogI(inputRaw)

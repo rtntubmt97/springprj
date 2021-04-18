@@ -30,4 +30,6 @@ const (
 	Input_BeginSnapshot
 	Input_CollectState
 	Input_PrintSnapshot
+
+	Input_CollectStateRsp
 )

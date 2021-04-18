@@ -21,15 +21,15 @@ func LogR(msg define.ProjectOutput) {
 }
 
 func LogE(msg string) {
-	// innerLog.Output(2, fmt.Sprintf("[logE] %s\n", msg))
+	innerLog.Output(2, fmt.Sprintf("[logE] %s\n", msg))
 }
 
 func LogD(msg string) {
-	// innerLog.Output(2, fmt.Sprintf("[LogD] %s\n", msg))
+	innerLog.Output(2, fmt.Sprintf("[LogD] %s\n", msg))
 }
 
 func LogI(msg string) {
-	// innerLog.Output(2, fmt.Sprintf("[LogI] %s\n", msg))
+	innerLog.Output(2, fmt.Sprintf("[LogI] %s\n", msg))
 }
 
 func PrintStack() {

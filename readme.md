@@ -20,7 +20,7 @@ func LogE(msg string) {
 **Don't turn off logR**\
 This logger is being used to print the result, so don't turn it off\
 **Input**\
-In current version, input is read from *input.ini* file. If you want to print the input in the console, uncomment *Print* statement in app/master/master.go
+In current version, input is read from *input.ini* file. If you want to print the input to console, uncomment *Print* statement in app/master/master.go
 ```go
 inputRaw, err := reader.ReadString('\n')
 // fmt.Print(inputRaw)

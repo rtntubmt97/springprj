@@ -71,16 +71,25 @@ func (master *Master) InputBeginSnapshot_call(startNodeId int32) {
 	utils.LogI(fmt.Sprintf("Sent InputBeginSnapshot to nodeId %d", startNodeId))
 }
 
-func (master *Master) InputCollectState_call() {
+func (master *Master) InputPrintSnapshot_call() {
+	msg := protocol.SimpleMessageBuffer{}
+	msg.Init(define.Input_PrintSnapshot)
+	master.connector.WriteTo(define.ObserverId, &msg)
+	utils.LogI(fmt.Sprintf("Sent InputPrintSnapshot to nodeId %d", define.ObserverId))
+}
+
+func (master *Master) InputCollectState_wcall() {
 	msg := protocol.SimpleMessageBuffer{}
 	msg.Init(define.Input_CollectState)
 	master.connector.WriteTo(define.ObserverId, &msg)
 	utils.LogI(fmt.Sprintf("Sent InputCollectState to nodeId %d", define.ObserverId))
-}
 
-func (master *Master) InputPrintSnapshot_call() {
-	msg := protocol.SimpleMessageBuffer{}
-	msg.Init(define.Input_CollectState)
-	master.connector.WriteTo(define.ObserverId, &msg)
-	utils.LogI(fmt.Sprintf("Sent InputPrintSnapshot to nodeId %d", define.ObserverId))
+	rspMsg := master.connector.WaitRsp(define.ObserverId)
+	cmd := define.ConnectorCmd(rspMsg.ReadI32())
+	if cmd == define.Input_CollectStateRsp {
+		utils.LogI("Observer finished InputCollectState")
+	} else {
+		fmt.Println(cmd)
+		utils.LogE("Wrong response")
+	}
 }

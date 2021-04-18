@@ -91,19 +91,19 @@ func (node *Node) processInfo(info MoneyTokenInfo, print bool) {
 
 func (node *Node) updateSnapShot() {
 	newSnapShot := SnapShot{}
-	newSnapShot.Money = node.money
-	channels := make(map[int32][]int32)
+	newSnapShot.NodeMoney = node.money
+	channels := make(map[int32]int64)
 	for nodeId, channel := range node.moneyChannels {
-		moneys := make([]int32, 0)
+		totalMoney := int64(0)
 		for _, money := range channel {
 			if money.Money == -1 {
 				continue
 			}
-			moneys = append(moneys, money.Money)
+			totalMoney += int64(money.Money)
 		}
-		channels[nodeId] = moneys
+		channels[nodeId] = totalMoney
 	}
-	newSnapShot.Channels = channels
+	newSnapShot.ChannelMoneys = channels
 	node.snapShot = newSnapShot
 }
 
@@ -139,15 +139,12 @@ func (node *Node) collectState_whandle(connId int32, msg define.MessageBuffer) {
 	rspMsg.WriteI32(int32(define.CollectStateRsp))
 
 	snapShot := node.snapShot
-	rspMsg.WriteI64(snapShot.Money)
-	rspMsg.WriteI32(int32(len(snapShot.Channels)))
-	for channelId, channel := range snapShot.Channels {
+	rspMsg.WriteI64(snapShot.NodeMoney)
+	rspMsg.WriteI32(int32(len(snapShot.ChannelMoneys)))
+	for channelId, channelMoney := range snapShot.ChannelMoneys {
 		rspMsg.WriteI32(channelId)
 		// moneySlice := getMoneySlice(channel)
-		rspMsg.WriteI32(int32(len(channel)))
-		for _, money := range channel {
-			rspMsg.WriteI32(money)
-		}
+		rspMsg.WriteI64(channelMoney)
 	}
 	node.connector.WriteTo(connId, &rspMsg)
 }

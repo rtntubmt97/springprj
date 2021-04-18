@@ -53,7 +53,7 @@ func (node *Node) inputReceive_whandle(connId int32, msg define.MessageBuffer) {
 func (node *Node) inputReceiveAll_whandle(connId int32, msg define.MessageBuffer) {
 	utils.LogI(fmt.Sprintf("Node %d Received inputReceiveAll signal", node.id))
 
-	node.receiveAllProccess(define.MasterId)
+	// node.receiveAllProccess(define.MasterId)
 
 	for nodeId, channel := range node.moneyChannels {
 		if nodeId == define.ObserverId ||
@@ -88,7 +88,7 @@ func (node *Node) processInfo(info MoneyTokenInfo, print bool) {
 
 	if info.IsToken() {
 		utils.LogI(fmt.Sprintf("Node %d received token from %d", node.id, sender))
-		node.updateSnapShot()
+		node.updateSnapShot(sender)
 		output = utils.CreateReceiveSnapshotOutput(sender)
 	} else {
 		node.money += int64(money)
@@ -101,11 +101,16 @@ func (node *Node) processInfo(info MoneyTokenInfo, print bool) {
 	}
 }
 
-func (node *Node) updateSnapShot() {
+func (node *Node) updateSnapShot(tokenSender int32) {
+	fmt.Println(node.moneyChannels)
 	newSnapShot := SnapShot{}
 	newSnapShot.NodeMoney = node.money
 	channels := make(map[int32]int64)
 	for nodeId, channel := range node.moneyChannels {
+		if nodeId == tokenSender {
+			channels[nodeId] = 0
+			continue
+		}
 		totalMoney := int64(0)
 		for _, money := range channel {
 			if money.Money == -1 {
@@ -137,8 +142,9 @@ func (node *Node) inputSend_whandle(connId int32, msg define.MessageBuffer) {
 func (node *Node) inputBeginSnapshot_whandle(connId int32, msg define.MessageBuffer) {
 	utils.LogI(fmt.Sprintf("Node %d Received inputPrintSnapshot signal", node.id))
 	utils.LogR(utils.CreateBeginSnapshotOutput(node.id))
-	newInfo := MoneyTokenInfo{SenderId: connId, Money: -1}
-	node.moneyChannels[connId] = append(node.moneyChannels[connId], newInfo)
+	// newInfo := MoneyTokenInfo{SenderId: connId, Money: -1}
+	// node.moneyChannels[connId] = append(node.moneyChannels[connId], newInfo)
+	node.updateSnapShot(connId)
 	node.propagateToken()
 
 	node.connector.SendAckRsp(connId, define.Input_BeginSnapshotRsp)

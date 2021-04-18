@@ -47,7 +47,7 @@ func CreateTokenOutput(sender int32) define.ProjectOutput {
 }
 
 func CreateBeginSnapshotOutput(beginer int32) define.ProjectOutput {
-	msg := fmt.Sprintf("BeginSnapshot %d", beginer)
+	msg := fmt.Sprintf("Started by Node %d", beginer)
 	return define.ProjectOutput(msg)
 }
 

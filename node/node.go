@@ -1,9 +1,12 @@
 package node
 
 import (
+	"fmt"
+
 	"github.com/rtntubmt97/springprj/connector"
 	connectorPkg "github.com/rtntubmt97/springprj/connector"
 	"github.com/rtntubmt97/springprj/define"
+	"github.com/rtntubmt97/springprj/utils"
 )
 
 type Node struct {
@@ -12,9 +15,15 @@ type Node struct {
 	connector     connectorPkg.Connector
 	moneyChannels map[int32]([]MoneyTokenInfo)
 	snapShot      SnapShot
+
+	// this flow can be implemented more easy if golang has tree structure
+	infoId int32
+	// nextTokenId      int32
+	// readStatusInfoId map[int32]bool
 }
 
 type MoneyTokenInfo struct {
+	id       int32
 	SenderId int32
 	Money    int32
 }
@@ -54,6 +63,10 @@ func (node *Node) Init(id int32) {
 
 	node.connector = connector
 	node.moneyChannels = make(map[int32]([]MoneyTokenInfo))
+
+	node.infoId = 0
+	// node.nextTokenId = -1
+	// node.readStatusInfoId = map[int32]bool{}
 }
 
 func (node *Node) GetId() int32 {
@@ -109,3 +122,40 @@ func (node *Node) WaitRsp(connId int32) define.MessageBuffer {
 func (node *Node) afterAccept(conInfo connector.ParticipantInfo) {
 	node.moneyChannels[conInfo.NodeId] = make([]MoneyTokenInfo, 0)
 }
+
+func (node *Node) nextInfoId() int32 {
+	ret := node.infoId
+	node.infoId++
+	return ret
+}
+
+// func (node *Node) setReadInfoId(infoId int32) {
+// 	delete(node.readStatusInfoId, infoId)
+// }
+
+func (node *Node) shouldReadMasterToken(infoId int32) bool {
+	tokenId := int32(-1)
+	masterChannel := node.moneyChannels[define.MasterId]
+	if len(masterChannel) == 0 {
+		utils.LogI(fmt.Sprintf("Node %d check for infoId %d, tokenId is %d\n", node.id, infoId, tokenId))
+		return false
+	}
+
+	nextMasterTokenId := masterChannel[0].id
+	tokenId = nextMasterTokenId
+	utils.LogI(fmt.Sprintf("Node %d check for infoId %d, tokenId is %d\n", node.id, infoId, tokenId))
+	if infoId == nextMasterTokenId {
+		utils.LogE("Wrong infoId")
+	}
+
+	return infoId > nextMasterTokenId
+}
+
+// func (node *Node) updateNextTokenId() {
+// 	masterChannel := node.moneyChannels[define.MasterId]
+// 	if len(masterChannel) == 0 {
+// 		return
+// 	}
+// 	node.nextTokenId = masterChannel[0].id
+// 	node.moneyChannels[define.MasterId] = node.moneyChannels[define.MasterId][1:]
+// }

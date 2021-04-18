@@ -52,28 +52,41 @@ func (node *Node) inputReceive_whandle(connId int32, msg define.MessageBuffer) {
 
 func (node *Node) inputReceiveAll_whandle(connId int32, msg define.MessageBuffer) {
 	utils.LogI(fmt.Sprintf("Node %d Received inputReceiveAll signal", node.id))
-	count := 0
+
+	// node.receiveAllProccess(define.MasterId)
+	for len(node.moneyChannels[define.MasterId]) > 0 {
+		node.processNextMasterToken(false)
+	}
+
 	for nodeId, channel := range node.moneyChannels {
 		if nodeId == define.ObserverId ||
 			nodeId == define.MasterId ||
 			len(channel) == 0 {
 			continue
 		}
-		for i := 0; i < len(channel); i++ {
-			count++
-			if count > 5 {
-				break
-			}
-			moneyTokenInfo := channel[i]
-			node.processInfo(moneyTokenInfo, false)
-		}
-		node.moneyChannels[nodeId] = channel[:0]
+		node.receiveAllProccess(nodeId)
+		// for i := 0; i < len(channel); i++ {
+		// 	moneyTokenInfo := channel[i]
+		// 	node.processInfo(moneyTokenInfo, false)
+		// }
+		// node.moneyChannels[nodeId] = channel[:0]
 	}
-
 	node.connector.SendAckRsp(connId, define.Input_RecieveAllRsp)
 }
 
+func (node *Node) receiveAllProccess(nodeId int32) {
+	channel := node.moneyChannels[nodeId]
+	for i := 0; i < len(channel); i++ {
+		moneyTokenInfo := channel[i]
+		node.processInfo(moneyTokenInfo, false)
+	}
+	node.moneyChannels[nodeId] = channel[:0]
+}
+
 func (node *Node) processInfo(info MoneyTokenInfo, print bool) {
+	for node.shouldReadMasterToken(info.id) {
+		node.processNextMasterToken(print)
+	}
 	money := info.Money
 	sender := info.SenderId
 	var output define.ProjectOutput
@@ -88,8 +101,22 @@ func (node *Node) processInfo(info MoneyTokenInfo, print bool) {
 		output = utils.CreateTransferOutput(sender, money)
 	}
 
-	if print {
+	if print && sender != define.MasterId {
 		utils.LogR(output)
+	}
+}
+
+func (node *Node) processNextMasterToken(print bool) {
+	masterChannel := node.moneyChannels[define.MasterId]
+	if len(masterChannel) < 1 {
+		utils.LogE("Wrong call to processNextMasterToken() ")
+		return
+	}
+	node.updateSnapShot()
+	node.moneyChannels[define.MasterId] = masterChannel[1:]
+	if print {
+		outPut := utils.CreateBeginSnapshotOutput(node.id)
+		utils.LogR(outPut)
 	}
 }
 
@@ -109,6 +136,8 @@ func (node *Node) updateSnapShot() {
 	}
 	newSnapShot.ChannelMoneys = channels
 	node.snapShot = newSnapShot
+	utils.LogI("newSnapShot")
+	fmt.Println(newSnapShot)
 }
 
 func (node *Node) inputSend_whandle(connId int32, msg define.MessageBuffer) {
@@ -127,7 +156,8 @@ func (node *Node) inputSend_whandle(connId int32, msg define.MessageBuffer) {
 func (node *Node) inputBeginSnapshot_whandle(connId int32, msg define.MessageBuffer) {
 	utils.LogI(fmt.Sprintf("Node %d Received inputPrintSnapshot signal", node.id))
 	utils.LogR(utils.CreateBeginSnapshotOutput(node.id))
-	node.updateSnapShot()
+	newInfo := MoneyTokenInfo{id: node.nextInfoId(), SenderId: connId, Money: -1}
+	node.moneyChannels[connId] = append(node.moneyChannels[connId], newInfo)
 	node.propagateToken()
 
 	node.connector.SendAckRsp(connId, define.Input_BeginSnapshotRsp)
@@ -135,7 +165,7 @@ func (node *Node) inputBeginSnapshot_whandle(connId int32, msg define.MessageBuf
 
 func (node *Node) sendToken_whandle(connId int32, msg define.MessageBuffer) {
 	utils.LogI(fmt.Sprintf("Node %d Received sendToken from node %d", node.id, connId))
-	newInfo := MoneyTokenInfo{SenderId: connId, Money: -1}
+	newInfo := MoneyTokenInfo{id: node.nextInfoId(), SenderId: connId, Money: -1}
 	node.moneyChannels[connId] = append(node.moneyChannels[connId], newInfo)
 
 	node.connector.SendAckRsp(connId, define.SendTokenRsp)
@@ -171,8 +201,8 @@ func (node *Node) collectState_whandle(connId int32, msg define.MessageBuffer) {
 
 func (node *Node) send_whandle(connId int32, msg define.MessageBuffer) {
 	money := msg.ReadI32()
-	utils.LogI(fmt.Sprintf("Node %d Received money %d from node %d", node.id, money, connId))
-	newInfo := MoneyTokenInfo{SenderId: connId, Money: money}
+	utils.LogI(fmt.Sprintf("Node %d Received send_call money %d from node %d", node.id, money, connId))
+	newInfo := MoneyTokenInfo{id: node.nextInfoId(), SenderId: connId, Money: money}
 	node.moneyChannels[connId] = append(node.moneyChannels[connId], newInfo)
 	// node.moneyChannels[connId] <- MoneyTokenInfo{SenderId: connId, Money: money}
 	// rspMsg := new(protocol.SimpleMessageBuffer)

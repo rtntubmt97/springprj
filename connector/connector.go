@@ -133,10 +133,10 @@ func (connector *Connector) Listen(port int) {
 	for {
 		conn, err := connector.listener.Accept()
 		if err != nil {
-			fmt.Println(err)
+			utils.LogE(err.Error())
+			continue
 		}
 
-		// msg := protocol.MessageBuffer{}
 		msg := protocol.SimpleMessageBuffer{}
 		msg.Read(conn)
 
@@ -149,10 +149,6 @@ func (connector *Connector) Listen(port int) {
 			utils.LogE(fmt.Sprintf("connId %d existed", otherInfo))
 			continue
 		}
-		// if otherInfo == -1 {
-		// 	utils.LogE("Invalid message")
-		// 	continue
-		// }
 
 		utils.LogI(fmt.Sprintf("Connector %d accepted conn %d", connector.id, otherInfo))
 		connector.initNewConn(otherInfo, conn)

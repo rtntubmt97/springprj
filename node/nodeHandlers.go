@@ -53,10 +53,7 @@ func (node *Node) inputReceive_whandle(connId int32, msg define.MessageBuffer) {
 func (node *Node) inputReceiveAll_whandle(connId int32, msg define.MessageBuffer) {
 	utils.LogI(fmt.Sprintf("Node %d Received inputReceiveAll signal", node.id))
 
-	// node.receiveAllProccess(define.MasterId)
-	for len(node.moneyChannels[define.MasterId]) > 0 {
-		node.processNextMasterToken(false)
-	}
+	node.receiveAllProccess(define.MasterId)
 
 	for nodeId, channel := range node.moneyChannels {
 		if nodeId == define.ObserverId ||
@@ -71,6 +68,7 @@ func (node *Node) inputReceiveAll_whandle(connId int32, msg define.MessageBuffer
 		// }
 		// node.moneyChannels[nodeId] = channel[:0]
 	}
+
 	node.connector.SendAckRsp(connId, define.Input_RecieveAllRsp)
 }
 
@@ -84,9 +82,6 @@ func (node *Node) receiveAllProccess(nodeId int32) {
 }
 
 func (node *Node) processInfo(info MoneyTokenInfo, print bool) {
-	for node.shouldReadMasterToken(info.id) {
-		node.processNextMasterToken(print)
-	}
 	money := info.Money
 	sender := info.SenderId
 	var output define.ProjectOutput
@@ -103,20 +98,6 @@ func (node *Node) processInfo(info MoneyTokenInfo, print bool) {
 
 	if print && sender != define.MasterId {
 		utils.LogR(output)
-	}
-}
-
-func (node *Node) processNextMasterToken(print bool) {
-	masterChannel := node.moneyChannels[define.MasterId]
-	if len(masterChannel) < 1 {
-		utils.LogE("Wrong call to processNextMasterToken() ")
-		return
-	}
-	node.updateSnapShot()
-	node.moneyChannels[define.MasterId] = masterChannel[1:]
-	if print {
-		outPut := utils.CreateBeginSnapshotOutput(node.id)
-		utils.LogR(outPut)
 	}
 }
 
@@ -156,7 +137,7 @@ func (node *Node) inputSend_whandle(connId int32, msg define.MessageBuffer) {
 func (node *Node) inputBeginSnapshot_whandle(connId int32, msg define.MessageBuffer) {
 	utils.LogI(fmt.Sprintf("Node %d Received inputPrintSnapshot signal", node.id))
 	utils.LogR(utils.CreateBeginSnapshotOutput(node.id))
-	newInfo := MoneyTokenInfo{id: node.nextInfoId(), SenderId: connId, Money: -1}
+	newInfo := MoneyTokenInfo{SenderId: connId, Money: -1}
 	node.moneyChannels[connId] = append(node.moneyChannels[connId], newInfo)
 	node.propagateToken()
 
@@ -165,7 +146,7 @@ func (node *Node) inputBeginSnapshot_whandle(connId int32, msg define.MessageBuf
 
 func (node *Node) sendToken_whandle(connId int32, msg define.MessageBuffer) {
 	utils.LogI(fmt.Sprintf("Node %d Received sendToken from node %d", node.id, connId))
-	newInfo := MoneyTokenInfo{id: node.nextInfoId(), SenderId: connId, Money: -1}
+	newInfo := MoneyTokenInfo{SenderId: connId, Money: -1}
 	node.moneyChannels[connId] = append(node.moneyChannels[connId], newInfo)
 
 	node.connector.SendAckRsp(connId, define.SendTokenRsp)
@@ -202,7 +183,7 @@ func (node *Node) collectState_whandle(connId int32, msg define.MessageBuffer) {
 func (node *Node) send_whandle(connId int32, msg define.MessageBuffer) {
 	money := msg.ReadI32()
 	utils.LogI(fmt.Sprintf("Node %d Received send_call money %d from node %d", node.id, money, connId))
-	newInfo := MoneyTokenInfo{id: node.nextInfoId(), SenderId: connId, Money: money}
+	newInfo := MoneyTokenInfo{SenderId: connId, Money: money}
 	node.moneyChannels[connId] = append(node.moneyChannels[connId], newInfo)
 	// node.moneyChannels[connId] <- MoneyTokenInfo{SenderId: connId, Money: money}
 	// rspMsg := new(protocol.SimpleMessageBuffer)

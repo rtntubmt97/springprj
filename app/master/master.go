@@ -92,6 +92,7 @@ func main() {
 				break
 			}
 		}
+
 		fmt.Print(inputRaw)
 
 		input := strings.Split(inputRaw, " ")

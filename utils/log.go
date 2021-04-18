@@ -10,10 +10,13 @@ import (
 )
 
 var innerLog *log.Logger
+var useLog bool
 
 func init() {
 	innerLog = log.New(os.Stdout, "", log.Lshortfile)
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
+
+	useLog = false
 }
 
 func LogR(msg define.ProjectOutput) {
@@ -21,14 +24,23 @@ func LogR(msg define.ProjectOutput) {
 }
 
 func LogE(msg string) {
+	if !useLog {
+		return
+	}
 	innerLog.Output(2, fmt.Sprintf("[logE] %s\n", msg))
 }
 
 func LogD(msg string) {
+	if !useLog {
+		return
+	}
 	innerLog.Output(2, fmt.Sprintf("[LogD] %s\n", msg))
 }
 
 func LogI(msg string) {
+	if !useLog {
+		return
+	}
 	innerLog.Output(2, fmt.Sprintf("[LogI] %s\n", msg))
 }
 
@@ -41,10 +53,10 @@ func CreateTransferOutput(sender int32, money int32) define.ProjectOutput {
 	return define.ProjectOutput(msg)
 }
 
-func CreateTokenOutput(sender int32) define.ProjectOutput {
-	msg := fmt.Sprintf("%d SnapshotToken -1", sender)
-	return define.ProjectOutput(msg)
-}
+// func CreateTokenOutput(sender int32) define.ProjectOutput {
+// 	msg := fmt.Sprintf("%d SnapshotToken -1", sender)
+// 	return define.ProjectOutput(msg)
+// }
 
 func CreateBeginSnapshotOutput(beginer int32) define.ProjectOutput {
 	msg := fmt.Sprintf("Started by Node %d", beginer)

@@ -102,7 +102,6 @@ func (node *Node) processInfo(info MoneyTokenInfo, print bool) {
 }
 
 func (node *Node) updateSnapShot(tokenSender int32) {
-	fmt.Println(node.moneyChannels)
 	newSnapShot := SnapShot{}
 	newSnapShot.NodeMoney = node.money
 	channels := make(map[int32]int64)
@@ -123,7 +122,6 @@ func (node *Node) updateSnapShot(tokenSender int32) {
 	newSnapShot.ChannelMoneys = channels
 	node.snapShot = newSnapShot
 	utils.LogI("newSnapShot")
-	fmt.Println(newSnapShot)
 }
 
 func (node *Node) inputSend_whandle(connId int32, msg define.MessageBuffer) {

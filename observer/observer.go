@@ -121,7 +121,6 @@ func (observer *Observer) collectState_wcall(connId int32) node.SnapShot {
 	}
 
 	utils.LogI(fmt.Sprintf("Observer finished collectState_wcall from node %d", connId))
-	fmt.Println(node.SnapShot{NodeMoney: money, ChannelMoneys: channels})
 
 	return node.SnapShot{NodeMoney: money, ChannelMoneys: channels}
 }

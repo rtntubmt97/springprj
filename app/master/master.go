@@ -49,7 +49,7 @@ func getStdinInput() []string {
 func createObserver(configPath string) {
 	var exeCmd *exec.Cmd
 	if utils.LoadedConfig.UseBin {
-		exeCmd = exec.Command("bin/observer.go", configPath, "somethingtohtop")
+		exeCmd = exec.Command("bin/observer", configPath, "somethingtohtop")
 	} else {
 		exeCmd = exec.Command("go", "run", "app/observer/observer.go", configPath, "somethingtohtop")
 	}
@@ -64,7 +64,7 @@ func createObserver(configPath string) {
 func createNode(configPath string, id string, initMoney string) {
 	var exeCmd *exec.Cmd
 	if utils.LoadedConfig.UseBin {
-		exeCmd = exec.Command("bin/node.go", configPath, id, initMoney, "somethingtohtop")
+		exeCmd = exec.Command("bin/node", configPath, id, initMoney, "somethingtohtop")
 	} else {
 		exeCmd = exec.Command("go", "run", "app/node/node.go", configPath, id, initMoney, "somethingtohtop")
 	}

@@ -1,6 +1,6 @@
 {
     "IsProduction": false,
-    "UseBin": false,
+    "UseBin": true,
     "InputFile" : "input.ini",
     "UseLog": false,
     "PrintInput": true,

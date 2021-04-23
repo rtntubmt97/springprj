@@ -6,7 +6,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/rtntubmt97/springprj/define"
 	"github.com/rtntubmt97/springprj/node"
 	"github.com/rtntubmt97/springprj/utils"
 )
@@ -24,11 +23,7 @@ func main() {
 		fmt.Println("invalid config path")
 	}
 
-	define.MasterId = utils.LoadedConfig.MasterId
-	define.MasterPort = utils.LoadedConfig.MasterPort
-	define.ObserverId = utils.LoadedConfig.ObserverId
-	define.ObserverPort = utils.LoadedConfig.ObserverPort
-	utils.UseLog = utils.LoadedConfig.UseLog
+	utils.ReloadConfig(configPath)
 
 	id, err := strconv.Atoi(os.Args[2])
 	if err != nil {

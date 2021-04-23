@@ -91,11 +91,7 @@ func main() {
 		fmt.Println("invalid config path")
 	}
 
-	define.MasterId = utils.LoadedConfig.MasterId
-	define.MasterPort = utils.LoadedConfig.MasterPort
-	define.ObserverId = utils.LoadedConfig.ObserverId
-	define.ObserverPort = utils.LoadedConfig.ObserverPort
-	utils.UseLog = utils.LoadedConfig.UseLog
+	utils.ReloadConfig("")
 
 	if !utils.IsPortAvailable(int(define.MasterPort)) {
 		fmt.Printf("Master node cannot using port %d", define.MasterPort)

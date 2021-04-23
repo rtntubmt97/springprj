@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+
+	"github.com/rtntubmt97/springprj/define"
 )
 
 type Config struct {
@@ -36,6 +38,12 @@ func ReloadConfig(filePath string) (error, Config) {
 	}
 
 	LoadedConfig = config
+
+	define.MasterId = LoadedConfig.MasterId
+	define.MasterPort = LoadedConfig.MasterPort
+	define.ObserverId = LoadedConfig.ObserverId
+	define.ObserverPort = LoadedConfig.ObserverPort
+	UseLog = LoadedConfig.UseLog
 
 	return nil, config
 }

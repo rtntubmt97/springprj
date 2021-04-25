@@ -53,17 +53,17 @@ func (node *Node) Init(id int32) {
 
 	connector.SetAfterAccept(node.afterAccept)
 
-	connector.SetHandleFunc(define.SendInt32, node.sendInt32_handle)
-	connector.SetHandleFunc(define.SendInt64, node.sendInt64_handle)
-	connector.SetHandleFunc(define.SendString, node.sendString_handle)
-	connector.SetHandleFunc(define.Input_Kill, node.inputKill_whandle)
-	connector.SetHandleFunc(define.Input_Send, node.inputSend_whandle)
-	connector.SetHandleFunc(define.Send, node.send_whandle)
-	connector.SetHandleFunc(define.Input_receive, node.inputReceive_whandle)
-	connector.SetHandleFunc(define.Input_receiveAll, node.inputReceiveAll_whandle)
-	connector.SetHandleFunc(define.Input_BeginSnapshot, node.inputBeginSnapshot_whandle)
-	connector.SetHandleFunc(define.SendToken, node.sendToken_whandle)
-	connector.SetHandleFunc(define.CollectState, node.collectState_whandle)
+	connector.SetHandleFunc(define.SendInt32, node.sendInt32Nowait)
+	connector.SetHandleFunc(define.SendInt64, node.sendInt64Nowait)
+	connector.SetHandleFunc(define.SendString, node.sendStringNowait)
+	connector.SetHandleFunc(define.Input_Kill, node.inputKillHandle)
+	connector.SetHandleFunc(define.Input_Send, node.inputSendHandle)
+	connector.SetHandleFunc(define.Send, node.sendHandle)
+	connector.SetHandleFunc(define.Input_receive, node.inputReceiveHandle)
+	connector.SetHandleFunc(define.Input_receiveAll, node.inputReceiveAllHandle)
+	connector.SetHandleFunc(define.Input_BeginSnapshot, node.inputBeginSnapshotHandle)
+	connector.SetHandleFunc(define.SendToken, node.sendTokenHandle)
+	connector.SetHandleFunc(define.CollectState, node.collectStateHandle)
 
 	node.connector = connector
 	node.moneyChannels = make(map[int32]([]MoneyTokenInfo))
@@ -110,7 +110,7 @@ func (node *Node) ConnectObserver() {
 
 // Connect to other nodes, after request other nodes information from the master.
 func (node *Node) ConnectPeers() {
-	otherNodeListenPorts := node.RequestInfo_wcall()
+	otherNodeListenPorts := node.RequestInfo()
 	for nodeId, port := range otherNodeListenPorts {
 		if nodeId == node.GetId() {
 			continue

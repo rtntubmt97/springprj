@@ -8,9 +8,9 @@ import (
 
 // Handle the request info message from a connector, response it all master-known
 // connector information
-func (master *Master) requestInfo_whandle(connId int32, msg define.MessageBuffer) {
+func (master *Master) requestInfoHandle(connId int32, msg define.MessageBuffer) {
 	utils.LogI("requestInfo_whandle run")
-	rspMsg := protocol.SimpleMessageBuffer{}
+	rspMsg := protocol.BinaryProtocol{}
 	rspMsg.Init(define.Rsp)
 	rspMsg.WriteI32(int32(define.RequestInfoRsp))
 	rspMsg.WriteI32(int32(len(master.connector.ConnectedConns)))

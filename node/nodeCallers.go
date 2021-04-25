@@ -20,13 +20,13 @@ import (
 )
 
 // Send a simple message contains an int32
-func (node *Node) SendInt32_call(otherNodeId int32, i int32) {
+func (node *Node) SendInt32Nowait(otherNodeId int32, i int32) {
 	conn := node.connector.ConnectedConns[otherNodeId]
 	if conn == nil {
 		utils.LogE("nil conn")
 		return
 	}
-	msg := protocol.SimpleMessageBuffer{}
+	msg := protocol.BinaryProtocol{}
 	msg.Init(define.SendInt32)
 	msg.WriteI32(i)
 	node.connector.WriteTo(otherNodeId, &msg)
@@ -35,13 +35,13 @@ func (node *Node) SendInt32_call(otherNodeId int32, i int32) {
 }
 
 // Send a simple message contains an int64.
-func (node *Node) SendInt64_call(otherNodeId int32, i int64) {
+func (node *Node) SendInt64Nowait(otherNodeId int32, i int64) {
 	conn := node.connector.ConnectedConns[otherNodeId]
 	if conn == nil {
 		utils.LogE("nil conn")
 		return
 	}
-	msg := protocol.SimpleMessageBuffer{}
+	msg := protocol.BinaryProtocol{}
 	msg.Init(define.SendInt64)
 	msg.WriteI64(i)
 	node.connector.WriteTo(otherNodeId, &msg)
@@ -50,13 +50,13 @@ func (node *Node) SendInt64_call(otherNodeId int32, i int64) {
 }
 
 // Send a simple message contains a string.
-func (node *Node) SendString_call(otherNodeId int32, s string) {
+func (node *Node) SendStringNowait(otherNodeId int32, s string) {
 	conn := node.connector.ConnectedConns[otherNodeId]
 	if conn == nil {
 		utils.LogE("nil conn")
 		return
 	}
-	msg := protocol.SimpleMessageBuffer{}
+	msg := protocol.BinaryProtocol{}
 	msg.Init(define.SendString)
 	msg.WriteString(s)
 	node.connector.WriteTo(otherNodeId, &msg)
@@ -65,13 +65,13 @@ func (node *Node) SendString_call(otherNodeId int32, s string) {
 }
 
 // Send an information request to master node.
-func (node *Node) RequestInfo_wcall() map[int32]int32 {
+func (node *Node) RequestInfo() map[int32]int32 {
 	conn := node.connector.ConnectedConns[define.MasterId]
 	if conn == nil {
 		utils.LogE("nil conn")
 		return nil
 	}
-	msg := protocol.SimpleMessageBuffer{}
+	msg := protocol.BinaryProtocol{}
 	msg.Init(define.RequestInfo)
 	node.connector.WriteTo(define.MasterId, &msg)
 	// msg.Write(conn)
@@ -104,13 +104,13 @@ func (node *Node) RequestInfo_wcall() map[int32]int32 {
 }
 
 // Send money to others node.
-func (node *Node) Send_wcall(receiver int32, money int32) {
+func (node *Node) Send(receiver int32, money int32) {
 	conn := node.connector.ConnectedConns[receiver]
 	if conn == nil {
 		utils.LogE("nil conn")
 		return
 	}
-	msg := protocol.SimpleMessageBuffer{}
+	msg := protocol.BinaryProtocol{}
 	msg.Init(define.Send)
 	msg.WriteI32(money)
 	node.connector.WriteTo(receiver, &msg)
@@ -127,8 +127,8 @@ func (node *Node) Send_wcall(receiver int32, money int32) {
 }
 
 // Send token to other node.
-func (node *Node) SendToken_wcall(connId int32) {
-	msg := protocol.SimpleMessageBuffer{}
+func (node *Node) SendToken(connId int32) {
+	msg := protocol.BinaryProtocol{}
 	msg.Init(define.SendToken)
 	node.connector.WriteTo(connId, &msg)
 	// msg.Write(conn)
@@ -143,6 +143,6 @@ func (node *Node) propagateToken() {
 		if nodeId == define.MasterId || nodeId == define.ObserverId {
 			continue
 		}
-		node.SendToken_wcall(nodeId)
+		node.SendToken(nodeId)
 	}
 }

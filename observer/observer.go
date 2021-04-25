@@ -30,9 +30,9 @@ func (observer *Observer) Init() {
 	observer.connector.Init(define.ObserverId)
 	observer.connector.ParticipantType = connectorPkg.ObserverType
 
-	observer.connector.SetHandleFunc(define.Input_Kill, observer.inputKill_whandle)
+	observer.connector.SetHandleFunc(define.Input_Kill, observer.inputKillHandle)
 	observer.connector.SetHandleFunc(define.Input_CollectState, observer.inputCollectState_whandle)
-	observer.connector.SetHandleFunc(define.Input_PrintSnapshot, observer.inputPrintSnapshot_whandle)
+	observer.connector.SetHandleFunc(define.Input_PrintSnapshot, observer.inputPrintSnapshotHandle)
 
 	observer.snapShots = make(map[int32]node.SnapShot)
 }
@@ -53,7 +53,7 @@ func (observer *Observer) ConnectMaster() {
 }
 
 // Handle the Kill signal from the master.
-func (observer *Observer) inputKill_whandle(connId int32, msg define.MessageBuffer) {
+func (observer *Observer) inputKillHandle(connId int32, msg define.MessageBuffer) {
 	utils.LogI(fmt.Sprintf("Node %d Received kill signal", observer.id))
 	observer.connector.SendAckRsp(define.MasterId, define.Input_KillRsp)
 	os.Exit(0)
@@ -68,7 +68,7 @@ func (observer *Observer) inputCollectState_whandle(connId int32, msg define.Mes
 		if peerId == define.MasterId || peerId == define.ObserverId {
 			continue
 		}
-		snapShot := observer.collectState_wcall(peerId)
+		snapShot := observer.collectStateHandle(peerId)
 		observer.snapShots[peerId] = snapShot
 	}
 
@@ -76,8 +76,8 @@ func (observer *Observer) inputCollectState_whandle(connId int32, msg define.Mes
 }
 
 // Send the collect state cmd to a node specified by an id.
-func (observer *Observer) collectState_wcall(connId int32) node.SnapShot {
-	msg := protocol.SimpleMessageBuffer{}
+func (observer *Observer) collectStateHandle(connId int32) node.SnapShot {
+	msg := protocol.BinaryProtocol{}
 	msg.Init(define.CollectState)
 	observer.connector.WriteTo(connId, &msg)
 
@@ -105,7 +105,7 @@ func (observer *Observer) collectState_wcall(connId int32) node.SnapShot {
 
 // Handle the PrintSnapshot from the master. Observer will format the snapshots which were
 // saved in the observer snapshot map, then print it.
-func (observer *Observer) inputPrintSnapshot_whandle(connId int32, msg define.MessageBuffer) {
+func (observer *Observer) inputPrintSnapshotHandle(connId int32, msg define.MessageBuffer) {
 	utils.LogI(fmt.Sprintf("Node %d Received inputPrintSnapshot signal", observer.id))
 
 	ret := strings.Builder{}

@@ -159,7 +159,7 @@ func (connector *Connector) Listen(port int) {
 			continue
 		}
 
-		msg := protocol.SimpleMessageBuffer{}
+		msg := protocol.BinaryProtocol{}
 		msg.Read(conn)
 
 		err, otherInfo := connector.greeting_whandle(msg, conn)
@@ -187,7 +187,7 @@ func (connector *Connector) Handle(otherInfo ParticipantInfo, conn net.Conn) {
 	for {
 		// utils.LogI(fmt.Sprintf("%d run Handle", connector.id))
 
-		msg := protocol.SimpleMessageBuffer{}
+		msg := protocol.BinaryProtocol{}
 		readErr := msg.Read(conn)
 		if readErr != nil {
 			break
@@ -202,14 +202,14 @@ func (connector *Connector) Handle(otherInfo ParticipantInfo, conn net.Conn) {
 
 // Send current connector's information to other connector and recieve its information
 func (connector *Connector) greeting_wcall(conn net.Conn) (error, ParticipantInfo) {
-	msg := protocol.SimpleMessageBuffer{}
+	msg := protocol.BinaryProtocol{}
 	msg.Init(define.Greeting)
 	msg.WriteI32(int32(connector.ParticipantType))
 	msg.WriteI32(connector.id)
 	msg.WriteI32(connector.listenPort)
 	msg.Write(conn)
 
-	rspMsg := protocol.SimpleMessageBuffer{}
+	rspMsg := protocol.BinaryProtocol{}
 	rspMsg.Read(conn)
 
 	cmd := define.ConnectorCmd(rspMsg.ReadI32())
@@ -234,7 +234,7 @@ func (connector *Connector) greeting_whandle(msg define.MessageBuffer, conn net.
 	idFromGreeting := msg.ReadI32()
 	portFromGreeting := msg.ReadI32()
 
-	rspMsg := protocol.SimpleMessageBuffer{}
+	rspMsg := protocol.BinaryProtocol{}
 	rspMsg.Init(define.GreetingRsp)
 	rspMsg.WriteI32(int32(connector.ParticipantType))
 	rspMsg.WriteI32(connector.id)
@@ -268,7 +268,7 @@ func (connector *Connector) WaitRsp(connId int32) define.MessageBuffer {
 
 // Send an ack message to a specific connector
 func (connector *Connector) SendAckRsp(connId int32, cmd define.ConnectorCmd) {
-	rspMsg := protocol.SimpleMessageBuffer{}
+	rspMsg := protocol.BinaryProtocol{}
 	rspMsg.Init(define.Rsp)
 	rspMsg.WriteI32(int32(cmd))
 	connector.WriteTo(connId, &rspMsg)

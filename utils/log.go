@@ -53,11 +53,6 @@ func CreateTransferOutput(sender int32, money int32) define.ProjectOutput {
 	return define.ProjectOutput(msg)
 }
 
-// func CreateTokenOutput(sender int32) define.ProjectOutput {
-// 	msg := fmt.Sprintf("%d SnapshotToken -1", sender)
-// 	return define.ProjectOutput(msg)
-// }
-
 func CreateBeginSnapshotOutput(beginer int32) define.ProjectOutput {
 	msg := fmt.Sprintf("Started by Node %d", beginer)
 	return define.ProjectOutput(msg)

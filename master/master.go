@@ -33,7 +33,7 @@ func (master *Master) Init() {
 	master.connector.Init(define.MasterId)
 	master.connector.ParticipantType = connectorPkg.MasterType
 
-	master.connector.SetHandleFunc(define.RequestInfo, master.requestInfo_whandle)
+	master.connector.SetHandleFunc(define.RequestInfo, master.requestInfoHandle)
 }
 
 // Start the listen operation of master
@@ -49,7 +49,7 @@ func (master *Master) Connect(id int32, port int32) {
 // Send Kill signal to all connector it known
 func (master *Master) KillAll() {
 	for nodeId := range master.connector.ConnectedConns {
-		master.InputKill_wcall(nodeId)
+		master.InputKill(nodeId)
 	}
 
 }

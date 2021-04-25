@@ -14,13 +14,13 @@ import (
 )
 
 // Send Kill signal to a node, it can be an observer
-func (master *Master) InputKill_wcall(nodeId int32) {
+func (master *Master) InputKill(nodeId int32) {
 	conn := master.connector.ConnectedConns[nodeId]
 	if conn == nil {
 		utils.LogE("nil conn")
 		return
 	}
-	msg := protocol.SimpleMessageBuffer{}
+	msg := protocol.BinaryProtocol{}
 	msg.Init(define.Input_Kill)
 	master.connector.WriteTo(nodeId, &msg)
 	utils.LogI(fmt.Sprintf("Sent kill to nodeId %d", nodeId))
@@ -29,13 +29,13 @@ func (master *Master) InputKill_wcall(nodeId int32) {
 }
 
 // Send Send signal to a node
-func (master *Master) InputSend_wcall(nodeId int32, receiver int32, money int32) {
+func (master *Master) InputSend(nodeId int32, receiver int32, money int32) {
 	conn := master.connector.ConnectedConns[nodeId]
 	if conn == nil {
 		utils.LogE("nil conn")
 		return
 	}
-	msg := protocol.SimpleMessageBuffer{}
+	msg := protocol.BinaryProtocol{}
 	msg.Init(define.Input_Send)
 	msg.WriteI32(receiver)
 	msg.WriteI32(money)
@@ -46,13 +46,13 @@ func (master *Master) InputSend_wcall(nodeId int32, receiver int32, money int32)
 }
 
 // Send Receive signal to a node
-func (master *Master) InputReceive_wcall(receiver int32, sender int32) {
+func (master *Master) InputReceive(receiver int32, sender int32) {
 	conn := master.connector.ConnectedConns[receiver]
 	if conn == nil {
 		utils.LogE("nil conn")
 		return
 	}
-	msg := protocol.SimpleMessageBuffer{}
+	msg := protocol.BinaryProtocol{}
 	msg.Init(define.Input_receive)
 	msg.WriteI32(sender)
 	master.connector.WriteTo(receiver, &msg)
@@ -62,12 +62,12 @@ func (master *Master) InputReceive_wcall(receiver int32, sender int32) {
 }
 
 // Send ReceiveAll signal to a node
-func (master *Master) InputReceiveAll_wcall() {
+func (master *Master) InputReceiveAll() {
 	for connId := range master.connector.ConnectedConns {
 		if connId == define.MasterId || connId == define.ObserverId {
 			continue
 		}
-		msg := protocol.SimpleMessageBuffer{}
+		msg := protocol.BinaryProtocol{}
 		msg.Init(define.Input_receiveAll)
 		master.connector.WriteTo(connId, &msg)
 		utils.LogI(fmt.Sprintf("Sent inputReceiveAll to nodeId %d", connId))
@@ -77,13 +77,13 @@ func (master *Master) InputReceiveAll_wcall() {
 }
 
 // Send BeginSnapshot signal to a node
-func (master *Master) InputBeginSnapshot_wcall(startNodeId int32) {
+func (master *Master) InputBeginSnapshot(startNodeId int32) {
 	conn := master.connector.ConnectedConns[startNodeId]
 	if conn == nil {
 		utils.LogE("nil conn")
 		return
 	}
-	msg := protocol.SimpleMessageBuffer{}
+	msg := protocol.BinaryProtocol{}
 	msg.Init(define.Input_BeginSnapshot)
 	master.connector.WriteTo(startNodeId, &msg)
 	utils.LogI(fmt.Sprintf("Sent InputBeginSnapshot to nodeId %d", startNodeId))
@@ -92,8 +92,8 @@ func (master *Master) InputBeginSnapshot_wcall(startNodeId int32) {
 }
 
 // Send PrintSnapshot signal to the observer
-func (master *Master) InputPrintSnapshot_wcall() {
-	msg := protocol.SimpleMessageBuffer{}
+func (master *Master) InputPrintSnapshot() {
+	msg := protocol.BinaryProtocol{}
 	msg.Init(define.Input_PrintSnapshot)
 	master.connector.WriteTo(define.ObserverId, &msg)
 	utils.LogI(fmt.Sprintf("Sent InputPrintSnapshot to nodeId %d", define.ObserverId))
@@ -102,8 +102,8 @@ func (master *Master) InputPrintSnapshot_wcall() {
 }
 
 // Send CollectState signal to the observer
-func (master *Master) InputCollectState_wcall() {
-	msg := protocol.SimpleMessageBuffer{}
+func (master *Master) InputCollectState() {
+	msg := protocol.BinaryProtocol{}
 	msg.Init(define.Input_CollectState)
 	master.connector.WriteTo(define.ObserverId, &msg)
 	utils.LogI(fmt.Sprintf("Sent InputCollectState to nodeId %d", define.ObserverId))

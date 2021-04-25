@@ -94,12 +94,12 @@ func main() {
 	utils.ReloadConfig("")
 
 	if !utils.IsPortAvailable(int(define.MasterPort)) {
-		fmt.Printf("Master node cannot using port %d", define.MasterPort)
+		fmt.Printf("Master cannot use port %d\n", define.MasterPort)
 		return
 	}
 
 	if !utils.IsPortAvailable(int(define.ObserverPort)) {
-		fmt.Printf("Observer node cannot using port %d", define.ObserverPort)
+		fmt.Printf("Observer cannot use port %d\n", define.ObserverPort)
 		return
 	}
 

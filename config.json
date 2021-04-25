@@ -2,7 +2,7 @@
     "IsProduction": false,
     "UseBin": false,
     "InputFile" : "input.ini",
-    "UseLog": true,
+    "UseLog": false,
     "PrintInput": true,
     "MasterId": 823412,
     "MasterPort": 9000,

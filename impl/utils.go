@@ -1,4 +1,4 @@
-package utils
+package impl
 
 import (
 	"encoding/json"
@@ -8,8 +8,6 @@ import (
 	"os"
 	"runtime/debug"
 	"strconv"
-
-	"github.com/rtntubmt97/springprj/define"
 )
 
 type Config struct {
@@ -43,10 +41,10 @@ func ReloadConfig(filePath string) (error, Config) {
 
 	LoadedConfig = config
 
-	define.MasterId = LoadedConfig.MasterId
-	define.MasterPort = LoadedConfig.MasterPort
-	define.ObserverId = LoadedConfig.ObserverId
-	define.ObserverPort = LoadedConfig.ObserverPort
+	MasterId = LoadedConfig.MasterId
+	MasterPort = LoadedConfig.MasterPort
+	ObserverId = LoadedConfig.ObserverId
+	ObserverPort = LoadedConfig.ObserverPort
 	UseLog = LoadedConfig.UseLog
 
 	return nil, config
@@ -86,7 +84,7 @@ func init() {
 	UseLog = false
 }
 
-func LogR(msg define.ProjectOutput) {
+func LogR(msg ProjectOutput) {
 	fmt.Println(msg)
 }
 
@@ -115,17 +113,17 @@ func PrintStack() {
 	debug.PrintStack()
 }
 
-func CreateTransferOutput(sender int32, money int32) define.ProjectOutput {
+func CreateTransferOutput(sender int32, money int32) ProjectOutput {
 	msg := fmt.Sprintf("%d Transfer %d", sender, money)
-	return define.ProjectOutput(msg)
+	return ProjectOutput(msg)
 }
 
-func CreateBeginSnapshotOutput(beginer int32) define.ProjectOutput {
+func CreateBeginSnapshotOutput(beginer int32) ProjectOutput {
 	msg := fmt.Sprintf("Started by Node %d", beginer)
-	return define.ProjectOutput(msg)
+	return ProjectOutput(msg)
 }
 
-func CreateReceiveSnapshotOutput(beginer int32) define.ProjectOutput {
+func CreateReceiveSnapshotOutput(beginer int32) ProjectOutput {
 	msg := fmt.Sprintf("%d SnapshotToken -1", beginer)
-	return define.ProjectOutput(msg)
+	return ProjectOutput(msg)
 }

@@ -6,8 +6,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/rtntubmt97/springprj/node"
-	"github.com/rtntubmt97/springprj/utils"
+	"github.com/rtntubmt97/springprj/impl"
 )
 
 func main() {
@@ -18,28 +17,26 @@ func main() {
 
 	configPath := os.Args[1]
 
-	err, _ := utils.ReloadConfig(configPath)
+	err, _ := impl.ReloadConfig(configPath)
 	if err != nil {
 		fmt.Println("invalid config path")
 	}
 
-	utils.ReloadConfig(configPath)
-
 	id, err := strconv.Atoi(os.Args[2])
 	if err != nil {
-		utils.LogE("Invalid id argument")
+		impl.LogE("Invalid id argument")
 		return
 	}
 
 	initMoney, err := strconv.Atoi(os.Args[3])
 	if err != nil {
-		utils.LogE("Invalid initMoney argument")
+		impl.LogE("Invalid initMoney argument")
 		return
 	}
 
-	port := utils.GetAvailablePort(9000, 9500)
+	port := impl.GetAvailablePort(9000, 9500)
 
-	node := node.Node{}
+	node := impl.Node{}
 	node.Init(int32(id))
 	node.SetMoney(int64(initMoney))
 	go node.Listen(port)

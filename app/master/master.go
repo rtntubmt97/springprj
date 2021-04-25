@@ -10,9 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rtntubmt97/springprj/define"
-	"github.com/rtntubmt97/springprj/master"
-	"github.com/rtntubmt97/springprj/utils"
+	"github.com/rtntubmt97/springprj/impl"
 )
 
 type InputCmd string
@@ -35,8 +33,8 @@ func getStdinInput() []string {
 	reader := bufio.NewReader(os.Stdin)
 	input, err := reader.ReadString('\n')
 	if err != nil {
-		utils.LogE("Invalid input")
-		utils.LogE(err.Error())
+		impl.LogE("Invalid input")
+		impl.LogE(err.Error())
 		os.Exit(1)
 	}
 
@@ -51,7 +49,7 @@ func getStdinInput() []string {
 // Start an observer process. This is a real os process with a pid on OS.
 func createObserver(configPath string) {
 	var exeCmd *exec.Cmd
-	if utils.LoadedConfig.UseBin {
+	if impl.LoadedConfig.UseBin {
 		exeCmd = exec.Command("bin/observer", configPath, "somethingtohtop")
 	} else {
 		exeCmd = exec.Command("go", "run", "app/observer/observer.go", configPath, "somethingtohtop")
@@ -60,14 +58,14 @@ func createObserver(configPath string) {
 	exeCmd.Stderr = os.Stderr
 	err := exeCmd.Start()
 	if err != nil {
-		utils.LogE(err.Error())
+		impl.LogE(err.Error())
 	}
 }
 
 // Start a node process. This is a real os process with a pid on OS.
 func createNode(configPath string, id string, initMoney string) {
 	var exeCmd *exec.Cmd
-	if utils.LoadedConfig.UseBin {
+	if impl.LoadedConfig.UseBin {
 		exeCmd = exec.Command("bin/node", configPath, id, initMoney, "somethingtohtop")
 	} else {
 		exeCmd = exec.Command("go", "run", "app/node/node.go", configPath, id, initMoney, "somethingtohtop")
@@ -76,12 +74,12 @@ func createNode(configPath string, id string, initMoney string) {
 	exeCmd.Stderr = os.Stderr
 	err := exeCmd.Start()
 	if err != nil {
-		utils.LogE(err.Error())
+		impl.LogE(err.Error())
 	}
 }
 
 // MasterObj will be used to send the command.
-var masterObj master.Master
+var masterObj impl.Master
 
 // var observerNode observer.Observer
 
@@ -93,27 +91,27 @@ func main() {
 	}
 
 	// Reload the configuration.
-	err, _ := utils.ReloadConfig(configPath)
+	err, _ := impl.ReloadConfig(configPath)
 	if err != nil {
 		fmt.Println("invalid config path")
 	}
 
 	// Check whether the master port is free.
-	if !utils.IsPortAvailable(int(define.MasterPort)) {
-		fmt.Printf("Master cannot use port %d\n", define.MasterPort)
+	if !impl.IsPortAvailable(int(impl.MasterPort)) {
+		fmt.Printf("Master cannot use port %d\n", impl.MasterPort)
 		return
 	}
 
 	// Check whether the observer port is free.
-	if !utils.IsPortAvailable(int(define.ObserverPort)) {
-		fmt.Printf("Observer cannot use port %d\n", define.ObserverPort)
+	if !impl.IsPortAvailable(int(impl.ObserverPort)) {
+		fmt.Printf("Observer cannot use port %d\n", impl.ObserverPort)
 		return
 	}
 
 	// Check and load the input file.
-	file, err := os.Open(utils.LoadedConfig.InputFile)
+	file, err := os.Open(impl.LoadedConfig.InputFile)
 	if err != nil {
-		utils.LogE(err.Error())
+		impl.LogE(err.Error())
 		return
 	}
 	defer file.Close()
@@ -135,7 +133,7 @@ func main() {
 		}
 
 		// Print the input line if config allows.
-		if utils.LoadedConfig.PrintInput {
+		if impl.LoadedConfig.PrintInput {
 			fmt.Print(inputRaw)
 		}
 
@@ -151,8 +149,8 @@ func main() {
 		switch cmd {
 		case StartMaster:
 			// Start the master obj and observer proccess.
-			utils.LogI("Matched StartMaster")
-			masterObj = master.Master{}
+			impl.LogI("Matched StartMaster")
+			masterObj = impl.Master{}
 			masterObj.Init()
 			go masterObj.Listen()
 			time.Sleep(2 * time.Second)
@@ -162,21 +160,21 @@ func main() {
 		case KillAll:
 			// Send the Kill signal to observer and nodes it has stated, then kill the
 			// master itself.
-			utils.LogI(inputRaw)
+			impl.LogI(inputRaw)
 			masterObj.KillAll()
 			time.Sleep(1 * time.Second)
-			utils.LogI("Ready to exit")
+			impl.LogI("Ready to exit")
 			os.Exit(0)
 
 		case CreateNode:
 			// Start a node proccess with an id and start money specified by the input
-			utils.LogI(inputRaw)
+			impl.LogI(inputRaw)
 			createNode(configPath, input[1], input[2])
 			time.Sleep(2000 * time.Millisecond)
 
 		case Send:
 			// Send Send singal to node to command it send the money to other node.
-			utils.LogI(inputRaw)
+			impl.LogI(inputRaw)
 			sender, _ := strconv.Atoi(input[1])
 			receiver, _ := strconv.Atoi(input[2])
 			money, _ := strconv.Atoi(input[3])
@@ -184,7 +182,7 @@ func main() {
 
 		case Receive:
 			// Send Seceive signal to node to command it receive the money from a sender channel.
-			utils.LogI(inputRaw)
+			impl.LogI(inputRaw)
 			sender := -1
 			receiver := -1
 			if len(input) == 2 {
@@ -197,24 +195,24 @@ func main() {
 
 		case ReceiveAll:
 			// Send ReceiveAll signal to all nodes to command them drain all the channels.
-			utils.LogI(inputRaw)
+			impl.LogI(inputRaw)
 			masterObj.SignalReceiveAll()
 
 		case BeginSnapshot:
 			// Send BeginSnapshot signal to a node to command it start the snapshot process.
-			utils.LogI(inputRaw)
+			impl.LogI(inputRaw)
 			startNodeId, _ := strconv.Atoi(input[1])
 			masterObj.SignalBeginSnapshot(int32(startNodeId))
 
 		case CollectState:
 			// Send CollectState signal to the Observer to command it collect states from
 			// all nodes.
-			utils.LogI(inputRaw)
+			impl.LogI(inputRaw)
 			masterObj.SignalCollectState()
 
 		case PrintSnapshot:
 			// Send PrintSnapshot signal to the Observer to command it print the states it has collected
-			utils.LogI(inputRaw)
+			impl.LogI(inputRaw)
 			masterObj.SignalPrintSnapshot()
 
 		default:

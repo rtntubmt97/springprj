@@ -7,16 +7,12 @@
 // of it in order to the reciever know what to do with that message.
 // The receiver will use the cmd in front of each message to determine the handler to handle it.
 
-package connector
+package impl
 
 import (
 	"fmt"
 	"net"
 	"sync"
-
-	"github.com/rtntubmt97/springprj/define"
-	"github.com/rtntubmt97/springprj/protocol"
-	"github.com/rtntubmt97/springprj/utils"
 )
 
 // Participant Type, this data show role of an process in the network (master, observer, node).
@@ -43,9 +39,9 @@ type Connector struct {
 	listenPort      int32
 	listener        net.Listener
 	ConnectedConns  map[int32]net.Conn
-	handlers        map[define.ConnectorCmd]define.HandleFunc
+	handlers        map[ConnectorCmd]HandleFunc
 	writeOutMutexes map[int32]*sync.Mutex
-	rspMsgChannel   map[int32](chan define.MessageBuffer)
+	rspMsgChannel   map[int32](chan MessageBuffer)
 	OtherInfos      map[int32]*ParticipantInfo
 	readyMutex      *sync.Mutex
 	afterAccept     AfterAccept
@@ -59,21 +55,21 @@ type AfterAccept func(connInfo ParticipantInfo)
 func (connector *Connector) Init(id int32) {
 	connector.id = id
 	connector.ConnectedConns = make(map[int32]net.Conn)
-	connector.handlers = make(map[define.ConnectorCmd]define.HandleFunc)
+	connector.handlers = make(map[ConnectorCmd]HandleFunc)
 	connector.writeOutMutexes = make(map[int32]*sync.Mutex)
-	connector.rspMsgChannel = make(map[int32]chan define.MessageBuffer)
+	connector.rspMsgChannel = make(map[int32]chan MessageBuffer)
 	connector.OtherInfos = make(map[int32]*ParticipantInfo)
 
-	utils.LogI(fmt.Sprintf("connId %d initiated", id))
+	LogI(fmt.Sprintf("connId %d initiated", id))
 	connector.readyMutex = new(sync.Mutex)
 
-	connector.SetHandleFunc(define.Rsp, connector.forwardRsp)
+	connector.SetHandleFunc(Rsp, connector.forwardRsp)
 }
 
 // The connector communicates by sending and recieving messages. This function set the handler
 // for each kind of messages. Pay attention to the use of this function in the node or
 // master structure to understand the concept of it.
-func (connector *Connector) SetHandleFunc(cmd define.ConnectorCmd, f define.HandleFunc) {
+func (connector *Connector) SetHandleFunc(cmd ConnectorCmd, f HandleFunc) {
 	connector.handlers[cmd] = f
 }
 
@@ -100,7 +96,7 @@ func (connector *Connector) initNewConn(peerInfo ParticipantInfo, conn net.Conn)
 	connId := peerInfo.NodeId
 	connector.ConnectedConns[connId] = conn
 	connector.writeOutMutexes[connId] = new(sync.Mutex)
-	connector.rspMsgChannel[connId] = make(chan define.MessageBuffer)
+	connector.rspMsgChannel[connId] = make(chan MessageBuffer)
 	connector.OtherInfos[connId] = &peerInfo
 }
 
@@ -110,7 +106,7 @@ func (connector *Connector) Connect(id int32, port int32) {
 	add := fmt.Sprintf("localhost:%d", port)
 	conn, err := net.Dial("tcp", add)
 	if err != nil {
-		utils.LogE("Invalid connect port")
+		LogE("Invalid connect port")
 		return
 	}
 
@@ -118,20 +114,20 @@ func (connector *Connector) Connect(id int32, port int32) {
 	connId := info.NodeId
 
 	if err != nil {
-		utils.LogE(err.Error())
+		LogE(err.Error())
 		return
 	}
 	if _, exist := connector.ConnectedConns[connId]; exist {
-		utils.LogE(fmt.Sprintf("connId %d existed", connId))
+		LogE(fmt.Sprintf("connId %d existed", connId))
 		return
 	}
 	if connId != id {
-		utils.LogE(fmt.Sprintf("Invalid connId %d", connId))
+		LogE(fmt.Sprintf("Invalid connId %d", connId))
 		return
 	}
 	otherInfo := ParticipantInfo{info.ParticipantType, connId, port}
 
-	utils.LogI(fmt.Sprintf("Connector %d connected conn %d", connector.id, otherInfo))
+	LogI(fmt.Sprintf("Connector %d connected conn %d", connector.id, otherInfo))
 	connector.initNewConn(otherInfo, conn)
 
 	go connector.Handle(otherInfo, conn)
@@ -144,35 +140,35 @@ func (connector *Connector) Listen(port int) {
 	add := fmt.Sprintf("localhost:%d", port)
 	connector.listener, err = net.Listen("tcp", add)
 	if err != nil {
-		utils.LogE(fmt.Sprintf("Connector %d got invalid listen port %d", connector.id, port))
+		LogE(fmt.Sprintf("Connector %d got invalid listen port %d", connector.id, port))
 		return
 	}
 
 	connector.listenPort = int32(port)
 	connector.readyMutex.Unlock()
 
-	utils.LogI(fmt.Sprintf("Start listening on port %d", port))
+	LogI(fmt.Sprintf("Start listening on port %d", port))
 	for {
 		conn, err := connector.listener.Accept()
 		if err != nil {
-			utils.LogE(err.Error())
+			LogE(err.Error())
 			continue
 		}
 
-		msg := protocol.BinaryProtocol{}
+		msg := BinaryProtocol{}
 		msg.Read(conn)
 
 		err, otherInfo := connector.greeting_whandle(msg, conn)
 		if err != nil {
-			utils.LogE(err.Error())
+			LogE(err.Error())
 			continue
 		}
 		if _, exist := connector.ConnectedConns[otherInfo.NodeId]; exist {
-			utils.LogE(fmt.Sprintf("connId %d existed", otherInfo))
+			LogE(fmt.Sprintf("connId %d existed", otherInfo))
 			continue
 		}
 
-		utils.LogI(fmt.Sprintf("Connector %d accepted conn %d", connector.id, otherInfo))
+		LogI(fmt.Sprintf("Connector %d accepted conn %d", connector.id, otherInfo))
 		connector.initNewConn(otherInfo, conn)
 		if connector.afterAccept != nil {
 			connector.afterAccept(otherInfo)
@@ -185,14 +181,14 @@ func (connector *Connector) Listen(port int) {
 // Handle incoming connector by its info and net.Conn
 func (connector *Connector) Handle(otherInfo ParticipantInfo, conn net.Conn) {
 	for {
-		// utils.LogI(fmt.Sprintf("%d run Handle", connector.id))
+		// LogI(fmt.Sprintf("%d run Handle", connector.id))
 
-		msg := protocol.BinaryProtocol{}
+		msg := BinaryProtocol{}
 		readErr := msg.Read(conn)
 		if readErr != nil {
 			break
 		}
-		cmd := define.ConnectorCmd(msg.ReadI32())
+		cmd := ConnectorCmd(msg.ReadI32())
 		f := connector.handlers[cmd]
 		if f != nil {
 			f(otherInfo.NodeId, msg)
@@ -202,19 +198,19 @@ func (connector *Connector) Handle(otherInfo ParticipantInfo, conn net.Conn) {
 
 // Send current connector's information to other connector and recieve its information
 func (connector *Connector) greeting_wcall(conn net.Conn) (error, ParticipantInfo) {
-	msg := protocol.BinaryProtocol{}
-	msg.Init(define.Greeting)
+	msg := BinaryProtocol{}
+	msg.Init(Greeting)
 	msg.WriteI32(int32(connector.ParticipantType))
 	msg.WriteI32(connector.id)
 	msg.WriteI32(connector.listenPort)
 	msg.Write(conn)
 
-	rspMsg := protocol.BinaryProtocol{}
+	rspMsg := BinaryProtocol{}
 	rspMsg.Read(conn)
 
-	cmd := define.ConnectorCmd(rspMsg.ReadI32())
-	if cmd != define.GreetingRsp {
-		return define.ErrFailGreeting, ParticipantInfo{}
+	cmd := ConnectorCmd(rspMsg.ReadI32())
+	if cmd != GreetingRsp {
+		return ErrFailGreeting, ParticipantInfo{}
 	}
 
 	cType := rspMsg.ReadI32()
@@ -224,18 +220,18 @@ func (connector *Connector) greeting_wcall(conn net.Conn) (error, ParticipantInf
 }
 
 // Recieve accepted connector's information and send current connector information to that connector
-func (connector *Connector) greeting_whandle(msg define.MessageBuffer, conn net.Conn) (error, ParticipantInfo) {
-	cmd := define.ConnectorCmd(msg.ReadI32())
-	if cmd != define.Greeting {
-		return define.ErrWrongCmd, ParticipantInfo{}
+func (connector *Connector) greeting_whandle(msg MessageBuffer, conn net.Conn) (error, ParticipantInfo) {
+	cmd := ConnectorCmd(msg.ReadI32())
+	if cmd != Greeting {
+		return ErrWrongCmd, ParticipantInfo{}
 	}
 
 	typeFromGreeting := ParticipantType(msg.ReadI32())
 	idFromGreeting := msg.ReadI32()
 	portFromGreeting := msg.ReadI32()
 
-	rspMsg := protocol.BinaryProtocol{}
-	rspMsg.Init(define.GreetingRsp)
+	rspMsg := BinaryProtocol{}
+	rspMsg.Init(GreetingRsp)
 	rspMsg.WriteI32(int32(connector.ParticipantType))
 	rspMsg.WriteI32(connector.id)
 	rspMsg.Write(conn)
@@ -247,7 +243,7 @@ func (connector *Connector) greeting_whandle(msg define.MessageBuffer, conn net.
 }
 
 // Write a writeable message to a connector specified by its id
-func (connector *Connector) WriteTo(connId int32, msg define.Writeable) {
+func (connector *Connector) WriteTo(connId int32, msg Writeable) {
 	mutex := connector.writeOutMutexes[connId]
 	mutex.Lock()
 	defer mutex.Unlock()
@@ -257,30 +253,30 @@ func (connector *Connector) WriteTo(connId int32, msg define.Writeable) {
 
 // Forward the response message to its corresponding channel in order to the handler
 // receive and continue proccess it
-func (connector *Connector) forwardRsp(connId int32, msg define.MessageBuffer) {
+func (connector *Connector) forwardRsp(connId int32, msg MessageBuffer) {
 	connector.rspMsgChannel[connId] <- msg
 }
 
 // Wait an incoming message from a specific connector
-func (connector *Connector) WaitRsp(connId int32) define.MessageBuffer {
+func (connector *Connector) WaitRsp(connId int32) MessageBuffer {
 	return <-connector.rspMsgChannel[connId]
 }
 
 // Send an ack message to a specific connector
-func (connector *Connector) SendAckRsp(connId int32, cmd define.ConnectorCmd) {
-	rspMsg := protocol.BinaryProtocol{}
-	rspMsg.Init(define.Rsp)
+func (connector *Connector) SendAckRsp(connId int32, cmd ConnectorCmd) {
+	rspMsg := BinaryProtocol{}
+	rspMsg.Init(Rsp)
 	rspMsg.WriteI32(int32(cmd))
 	connector.WriteTo(connId, &rspMsg)
 }
 
 // Wait fo an Ack message from a specific connector and check where it is correct ack by the cmd
-func (connector *Connector) WaitAckRsp(nodeId int32, cmd define.ConnectorCmd) {
+func (connector *Connector) WaitAckRsp(nodeId int32, cmd ConnectorCmd) {
 	rspMsg := connector.WaitRsp(nodeId)
-	rspCmd := define.ConnectorCmd(rspMsg.ReadI32())
+	rspCmd := ConnectorCmd(rspMsg.ReadI32())
 	if cmd == rspCmd {
-		utils.LogI(fmt.Sprintf("Connecter %d received correct response for cmd %d", connector.id, cmd))
+		LogI(fmt.Sprintf("Connecter %d received correct response for cmd %d", connector.id, cmd))
 	} else {
-		utils.LogI(fmt.Sprintf("Connecter %d  received %d, wrong response for cmd %d", connector.id, rspCmd, cmd))
+		LogI(fmt.Sprintf("Connecter %d  received %d, wrong response for cmd %d", connector.id, rspCmd, cmd))
 	}
 }

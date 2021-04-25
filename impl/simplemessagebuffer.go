@@ -5,16 +5,13 @@
 // different features (compressed, encrypted, readable, ...) as long as it satisfied
 // the MessageBuffer, Writeable and Readable interfaces in the define package.
 
-package protocol
+package impl
 
 import (
 	"bytes"
 	"encoding/binary"
 	"io"
 	"reflect"
-
-	"github.com/rtntubmt97/springprj/define"
-	"github.com/rtntubmt97/springprj/utils"
 )
 
 // +---------+---------+-----+...+-----+--------+...+--------+--------+...+--------+---------+-----+...+-----+
@@ -37,25 +34,25 @@ func (mb *BinaryProtocol) InitEmpty() {
 // Initialize SimpleMessageBuffer with an empty Buf, write an int32 to specify the
 // the kind of message it stored. (This method is useful in current project but
 // putting the method here is not a good pattern.)
-func (mb *BinaryProtocol) Init(command define.ConnectorCmd) {
+func (mb *BinaryProtocol) Init(command ConnectorCmd) {
 	mb.InitEmpty()
 	mb.WriteI32(int32(command))
 }
 
 // Write int32 to the SimpleMessageBuffer
-func (mb BinaryProtocol) WriteI32(i int32) define.MessageBuffer {
+func (mb BinaryProtocol) WriteI32(i int32) MessageBuffer {
 	binary.Write(mb.Buf, binary.BigEndian, i)
 	return mb
 }
 
 // Write int64 to the SimpleMessageBuffer
-func (mb BinaryProtocol) WriteI64(i int64) define.MessageBuffer {
+func (mb BinaryProtocol) WriteI64(i int64) MessageBuffer {
 	binary.Write(mb.Buf, binary.BigEndian, i)
 	return mb
 }
 
 // Write string to the SimpleMessageBuffer
-func (mb BinaryProtocol) WriteString(s string) define.MessageBuffer {
+func (mb BinaryProtocol) WriteString(s string) MessageBuffer {
 	sLen := int32(len(s))
 	mb.WriteI32(sLen)
 	mb.Buf.WriteString(s)
@@ -93,13 +90,13 @@ func (message *BinaryProtocol) Read(reader io.Reader) error {
 	initBytes := make([]byte, len(magicBytes))
 	_, err := reader.Read(initBytes)
 	if err != nil {
-		utils.LogE(err.Error())
+		LogE(err.Error())
 		return err
 	}
 
 	if !reflect.DeepEqual(magicBytes, initBytes) {
-		utils.LogE("wrong initBytes")
-		return define.ErrWrongInitBytes
+		LogE("wrong initBytes")
+		return ErrWrongInitBytes
 	}
 
 	var len int32
@@ -107,11 +104,11 @@ func (message *BinaryProtocol) Read(reader io.Reader) error {
 	data := make([]byte, len)
 	n, err := io.ReadFull(reader, data)
 	if err != nil {
-		utils.LogE(err.Error())
+		LogE(err.Error())
 		return err
 	}
 	if int32(n) != len {
-		utils.LogE("wrong len")
+		LogE("wrong len")
 		return err
 	}
 

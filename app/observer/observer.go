@@ -5,8 +5,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/rtntubmt97/springprj/observer"
-	"github.com/rtntubmt97/springprj/utils"
+	"github.com/rtntubmt97/springprj/impl"
 )
 
 func main() {
@@ -18,14 +17,12 @@ func main() {
 
 	configPath := os.Args[1]
 
-	err, _ := utils.ReloadConfig(configPath)
+	err, _ := impl.ReloadConfig(configPath)
 	if err != nil {
 		fmt.Println("invalid config path")
 	}
 
-	utils.ReloadConfig(configPath)
-
-	observer := observer.Observer{}
+	observer := impl.Observer{}
 	observer.Init()
 	go observer.Listen()
 	// time.Sleep(1000 * time.Millisecond)

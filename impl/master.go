@@ -13,36 +13,31 @@
 // to nodes/observer by sending specific message.
 // masterHandlers.go file contains its handler which will be used to handle the incoming messages.
 
-package master
+package impl
 
 import (
 	"fmt"
-
-	connectorPkg "github.com/rtntubmt97/springprj/connector"
-	"github.com/rtntubmt97/springprj/define"
-	"github.com/rtntubmt97/springprj/protocol"
-	"github.com/rtntubmt97/springprj/utils"
 )
 
 // Master struct, it contain an id (which will be assign to an defined int32) and an connector
 type Master struct {
 	id        int32
-	connector connectorPkg.Connector
+	connector Connector
 }
 
 // Initilize master
 func (master *Master) Init() {
-	master.id = define.MasterId
-	master.connector = connectorPkg.Connector{}
-	master.connector.Init(define.MasterId)
-	master.connector.ParticipantType = connectorPkg.MasterType
+	master.id = MasterId
+	master.connector = Connector{}
+	master.connector.Init(MasterId)
+	master.connector.ParticipantType = MasterType
 
-	master.connector.SetHandleFunc(define.RequestInfo, master.requestInfoHandle)
+	master.connector.SetHandleFunc(RequestInfo, master.requestInfoHandle)
 }
 
 // Start the listen operation of master
 func (master *Master) Listen() {
-	master.connector.Listen(int(define.MasterPort))
+	master.connector.Listen(int(MasterPort))
 }
 
 // Connect to a connector by id and port
@@ -62,62 +57,62 @@ func (master *Master) KillAll() {
 func (master *Master) SignalKill(nodeId int32) {
 	conn := master.connector.ConnectedConns[nodeId]
 	if conn == nil {
-		utils.LogE("nil conn")
+		LogE("nil conn")
 		return
 	}
-	msg := protocol.BinaryProtocol{}
-	msg.Init(define.Input_Kill)
+	msg := BinaryProtocol{}
+	msg.Init(Input_Kill)
 	master.connector.WriteTo(nodeId, &msg)
-	utils.LogI(fmt.Sprintf("Sent kill to nodeId %d", nodeId))
+	LogI(fmt.Sprintf("Sent kill to nodeId %d", nodeId))
 
-	master.connector.WaitAckRsp(nodeId, define.Input_KillRsp)
+	master.connector.WaitAckRsp(nodeId, Input_KillRsp)
 }
 
 // Send Send signal to a node
 func (master *Master) SignalSend(nodeId int32, receiver int32, money int32) {
 	conn := master.connector.ConnectedConns[nodeId]
 	if conn == nil {
-		utils.LogE("nil conn")
+		LogE("nil conn")
 		return
 	}
-	msg := protocol.BinaryProtocol{}
-	msg.Init(define.Input_Send)
+	msg := BinaryProtocol{}
+	msg.Init(Input_Send)
 	msg.WriteI32(receiver)
 	msg.WriteI32(money)
 	master.connector.WriteTo(nodeId, &msg)
-	utils.LogI(fmt.Sprintf("Sent inputSend to nodeId %d, receiver is %d, money is %d", nodeId, receiver, money))
+	LogI(fmt.Sprintf("Sent inputSend to nodeId %d, receiver is %d, money is %d", nodeId, receiver, money))
 
-	master.connector.WaitAckRsp(nodeId, define.Input_SendRsp)
+	master.connector.WaitAckRsp(nodeId, Input_SendRsp)
 }
 
 // Send Receive signal to a node
 func (master *Master) SignalReceive(receiver int32, sender int32) {
 	conn := master.connector.ConnectedConns[receiver]
 	if conn == nil {
-		utils.LogE("nil conn")
+		LogE("nil conn")
 		return
 	}
-	msg := protocol.BinaryProtocol{}
-	msg.Init(define.Input_receive)
+	msg := BinaryProtocol{}
+	msg.Init(Input_receive)
 	msg.WriteI32(sender)
 	master.connector.WriteTo(receiver, &msg)
-	utils.LogI(fmt.Sprintf("Sent inputReceive to nodeId %d, sender is %d", receiver, sender))
+	LogI(fmt.Sprintf("Sent inputReceive to nodeId %d, sender is %d", receiver, sender))
 
-	master.connector.WaitAckRsp(receiver, define.Input_receiveRsp)
+	master.connector.WaitAckRsp(receiver, Input_receiveRsp)
 }
 
 // Send ReceiveAll signal to a node
 func (master *Master) SignalReceiveAll() {
 	for connId := range master.connector.ConnectedConns {
-		if connId == define.MasterId || connId == define.ObserverId {
+		if connId == MasterId || connId == ObserverId {
 			continue
 		}
-		msg := protocol.BinaryProtocol{}
-		msg.Init(define.Input_receiveAll)
+		msg := BinaryProtocol{}
+		msg.Init(Input_receiveAll)
 		master.connector.WriteTo(connId, &msg)
-		utils.LogI(fmt.Sprintf("Sent inputReceiveAll to nodeId %d", connId))
+		LogI(fmt.Sprintf("Sent inputReceiveAll to nodeId %d", connId))
 
-		master.connector.WaitAckRsp(connId, define.Input_receiveAllRsp)
+		master.connector.WaitAckRsp(connId, Input_receiveAllRsp)
 	}
 }
 
@@ -125,44 +120,44 @@ func (master *Master) SignalReceiveAll() {
 func (master *Master) SignalBeginSnapshot(startNodeId int32) {
 	conn := master.connector.ConnectedConns[startNodeId]
 	if conn == nil {
-		utils.LogE("nil conn")
+		LogE("nil conn")
 		return
 	}
-	msg := protocol.BinaryProtocol{}
-	msg.Init(define.Input_BeginSnapshot)
+	msg := BinaryProtocol{}
+	msg.Init(Input_BeginSnapshot)
 	master.connector.WriteTo(startNodeId, &msg)
-	utils.LogI(fmt.Sprintf("Sent InputBeginSnapshot to nodeId %d", startNodeId))
+	LogI(fmt.Sprintf("Sent InputBeginSnapshot to nodeId %d", startNodeId))
 
-	master.connector.WaitAckRsp(startNodeId, define.Input_BeginSnapshotRsp)
+	master.connector.WaitAckRsp(startNodeId, Input_BeginSnapshotRsp)
 }
 
 // Send PrintSnapshot signal to the observer
 func (master *Master) SignalPrintSnapshot() {
-	msg := protocol.BinaryProtocol{}
-	msg.Init(define.Input_PrintSnapshot)
-	master.connector.WriteTo(define.ObserverId, &msg)
-	utils.LogI(fmt.Sprintf("Sent InputPrintSnapshot to nodeId %d", define.ObserverId))
+	msg := BinaryProtocol{}
+	msg.Init(Input_PrintSnapshot)
+	master.connector.WriteTo(ObserverId, &msg)
+	LogI(fmt.Sprintf("Sent InputPrintSnapshot to nodeId %d", ObserverId))
 
-	master.connector.WaitAckRsp(define.ObserverId, define.Input_PrintSnapshotRsp)
+	master.connector.WaitAckRsp(ObserverId, Input_PrintSnapshotRsp)
 }
 
 // Send CollectState signal to the observer
 func (master *Master) SignalCollectState() {
-	msg := protocol.BinaryProtocol{}
-	msg.Init(define.Input_CollectState)
-	master.connector.WriteTo(define.ObserverId, &msg)
-	utils.LogI(fmt.Sprintf("Sent InputCollectState to nodeId %d", define.ObserverId))
+	msg := BinaryProtocol{}
+	msg.Init(Input_CollectState)
+	master.connector.WriteTo(ObserverId, &msg)
+	LogI(fmt.Sprintf("Sent InputCollectState to nodeId %d", ObserverId))
 
-	master.connector.WaitAckRsp(define.ObserverId, define.Input_CollectStateRsp)
+	master.connector.WaitAckRsp(ObserverId, Input_CollectStateRsp)
 }
 
 // Handle the request info message from a connector, response it all master-known
 // connector information
-func (master *Master) requestInfoHandle(connId int32, msg define.MessageBuffer) {
-	utils.LogI("requestInfo_whandle run")
-	rspMsg := protocol.BinaryProtocol{}
-	rspMsg.Init(define.Rsp)
-	rspMsg.WriteI32(int32(define.RequestInfoRsp))
+func (master *Master) requestInfoHandle(connId int32, msg MessageBuffer) {
+	LogI("requestInfo_whandle run")
+	rspMsg := BinaryProtocol{}
+	rspMsg.Init(Rsp)
+	rspMsg.WriteI32(int32(RequestInfoRsp))
 	rspMsg.WriteI32(int32(len(master.connector.ConnectedConns)))
 	for otherConnId := range master.connector.ConnectedConns {
 		rspMsg.WriteI32(otherConnId)

@@ -1,5 +1,36 @@
 package define
 
+import (
+	"errors"
+	"io"
+)
+
+// Interface of the MessageBuffer
+
+type MessageBuffer interface {
+	WriteI32(i int32) MessageBuffer
+
+	WriteI64(i int64) MessageBuffer
+
+	WriteString(s string) MessageBuffer
+
+	ReadI32() int32
+
+	ReadI64() int64
+
+	ReadString() string
+}
+
+type Writeable interface {
+	Write(writer io.Writer) error
+}
+
+type Readable interface {
+	Read(reader io.Reader) error
+}
+
+type HandleFunc func(connId int32, msg MessageBuffer)
+
 // The connector command integer will be written in front of every message in order
 // to help the receiver know what to do with that message
 
@@ -41,3 +72,24 @@ const (
 	Input_CollectStateRsp  ConnectorCmd = 226
 	Input_PrintSnapshotRsp ConnectorCmd = 227
 )
+
+// Some defined variable. Later, it can be modify by the utils. This is a poor design
+// and will be refactor soon.
+
+var MasterPort = int32(9000)
+var MasterId = int32(7781122)
+var ObserverPort = int32(9001)
+var ObserverId = int32(7781123)
+
+// Define output message of project
+type ProjectOutput string
+
+const (
+	ERR_SEND ProjectOutput = "ERR_SEND"
+)
+
+// Some common errors used in this project
+
+var ErrWrongInitBytes = errors.New("WrongInitBytes")
+var ErrWrongCmd = errors.New("WrongCmd")
+var ErrFailGreeting = errors.New("FailGreeting")

@@ -180,7 +180,7 @@ func main() {
 			sender, _ := strconv.Atoi(input[1])
 			receiver, _ := strconv.Atoi(input[2])
 			money, _ := strconv.Atoi(input[3])
-			masterObj.InputSend(int32(sender), int32(receiver), int32(money))
+			masterObj.SignalSend(int32(sender), int32(receiver), int32(money))
 
 		case Receive:
 			// Send Seceive signal to node to command it receive the money from a sender channel.
@@ -193,29 +193,29 @@ func main() {
 				receiver, _ = strconv.Atoi(input[1])
 				sender, _ = strconv.Atoi(input[2])
 			}
-			masterObj.InputReceive(int32(receiver), int32(sender))
+			masterObj.SignalReceive(int32(receiver), int32(sender))
 
 		case ReceiveAll:
 			// Send ReceiveAll signal to all nodes to command them drain all the channels.
 			utils.LogI(inputRaw)
-			masterObj.InputReceiveAll()
+			masterObj.SignalReceiveAll()
 
 		case BeginSnapshot:
 			// Send BeginSnapshot signal to a node to command it start the snapshot process.
 			utils.LogI(inputRaw)
 			startNodeId, _ := strconv.Atoi(input[1])
-			masterObj.InputBeginSnapshot(int32(startNodeId))
+			masterObj.SignalBeginSnapshot(int32(startNodeId))
 
 		case CollectState:
 			// Send CollectState signal to the Observer to command it collect states from
 			// all nodes.
 			utils.LogI(inputRaw)
-			masterObj.InputCollectState()
+			masterObj.SignalCollectState()
 
 		case PrintSnapshot:
 			// Send PrintSnapshot signal to the Observer to command it print the states it has collected
 			utils.LogI(inputRaw)
-			masterObj.InputPrintSnapshot()
+			masterObj.SignalPrintSnapshot()
 
 		default:
 		}

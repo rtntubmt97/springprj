@@ -10,25 +10,23 @@ import (
 )
 
 func main() {
-	if len(os.Args) != 5 {
+	if len(os.Args) != 4 {
 		fmt.Println("Invalid arguments for node")
 		return
 	}
 
-	configPath := os.Args[1]
-
-	err, _ := impl.ReloadConfig(configPath)
+	err, _ := impl.ReloadConfig()
 	if err != nil {
 		fmt.Println("invalid config path")
 	}
 
-	id, err := strconv.Atoi(os.Args[2])
+	id, err := strconv.Atoi(os.Args[1])
 	if err != nil {
 		impl.LogE("Invalid id argument")
 		return
 	}
 
-	initMoney, err := strconv.Atoi(os.Args[3])
+	initMoney, err := strconv.Atoi(os.Args[2])
 	if err != nil {
 		impl.LogE("Invalid initMoney argument")
 		return

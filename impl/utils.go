@@ -24,10 +24,8 @@ type Config struct {
 
 var LoadedConfig Config
 
-func ReloadConfig(filePath string) (error, Config) {
-	if filePath == "" {
-		filePath = "config.json"
-	}
+func ReloadConfig() (error, Config) {
+	filePath := "config.json"
 	file, _ := os.Open(filePath)
 	defer file.Close()
 

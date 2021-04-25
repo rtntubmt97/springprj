@@ -47,12 +47,12 @@ func getStdinInput() []string {
 }
 
 // Start an observer process. This is a real os process with a pid on OS.
-func createObserver(configPath string) {
+func createObserver() {
 	var exeCmd *exec.Cmd
 	if impl.LoadedConfig.UseBin {
-		exeCmd = exec.Command("bin/observer", configPath, "somethingtohtop")
+		exeCmd = exec.Command("bin/observer", "somethingtohtop")
 	} else {
-		exeCmd = exec.Command("go", "run", "app/observer/observer.go", configPath, "somethingtohtop")
+		exeCmd = exec.Command("go", "run", "app/observer/observer.go", "somethingtohtop")
 	}
 	exeCmd.Stdout = os.Stdout
 	exeCmd.Stderr = os.Stderr
@@ -63,12 +63,12 @@ func createObserver(configPath string) {
 }
 
 // Start a node process. This is a real os process with a pid on OS.
-func createNode(configPath string, id string, initMoney string) {
+func createNode(id string, initMoney string) {
 	var exeCmd *exec.Cmd
 	if impl.LoadedConfig.UseBin {
-		exeCmd = exec.Command("bin/node", configPath, id, initMoney, "somethingtohtop")
+		exeCmd = exec.Command("bin/node", id, initMoney, "somethingtohtop")
 	} else {
-		exeCmd = exec.Command("go", "run", "app/node/node.go", configPath, id, initMoney, "somethingtohtop")
+		exeCmd = exec.Command("go", "run", "app/node/node.go", id, initMoney, "somethingtohtop")
 	}
 	exeCmd.Stdout = os.Stdout
 	exeCmd.Stderr = os.Stderr
@@ -84,14 +84,8 @@ var masterObj impl.Master
 // var observerNode observer.Observer
 
 func main() {
-	// Get the configuration path if it was passed to the argument command line.
-	configPath := "config.json"
-	if len(os.Args) > 1 {
-		configPath = os.Args[1]
-	}
-
 	// Reload the configuration.
-	err, _ := impl.ReloadConfig(configPath)
+	err, _ := impl.ReloadConfig()
 	if err != nil {
 		fmt.Println("invalid config path")
 	}
@@ -154,7 +148,7 @@ func main() {
 			masterObj.Init()
 			go masterObj.Listen()
 			time.Sleep(2 * time.Second)
-			createObserver(configPath)
+			createObserver()
 			time.Sleep(2 * time.Second)
 
 		case KillAll:
@@ -169,7 +163,7 @@ func main() {
 		case CreateNode:
 			// Start a node proccess with an id and start money specified by the input
 			impl.LogI(inputRaw)
-			createNode(configPath, input[1], input[2])
+			createNode(input[1], input[2])
 			time.Sleep(2000 * time.Millisecond)
 
 		case Send:

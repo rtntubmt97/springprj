@@ -9,15 +9,13 @@ import (
 )
 
 func main() {
-	if len(os.Args) != 3 {
+	if len(os.Args) != 2 {
 		fmt.Println("Invalid arguments for observer")
 		fmt.Println(len(os.Args))
 		return
 	}
 
-	configPath := os.Args[1]
-
-	err, _ := impl.ReloadConfig(configPath)
+	err, _ := impl.ReloadConfig()
 	if err != nil {
 		fmt.Println("invalid config path")
 	}

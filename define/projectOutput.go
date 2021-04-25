@@ -1,5 +1,6 @@
 package define
 
+// Define output message of project
 type ProjectOutput string
 
 const (

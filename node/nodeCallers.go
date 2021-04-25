@@ -1,3 +1,14 @@
+// The "w" character in the wcall post fix means that call function will wait for an
+// ack message or response message with data before return
+// The "Input" in the call prefix mean that this caller will be trigger by input of user.
+// They will be called in the app/master/master.go when the correspond input matched
+
+// Node can send a simple int32, int64, string to master/observer/nodes.
+// Node can send a request information call to the master and get the data.
+// Node can send Send(_call) to other node (that node will receive it, and put the money
+// in the corresponding channel to the sender). Node also can send a token to other nodes
+// to propagate the beginSnapshot command of the master.
+
 package node
 
 import (
@@ -8,6 +19,7 @@ import (
 	"github.com/rtntubmt97/springprj/utils"
 )
 
+// Send a simple message contains an int32
 func (node *Node) SendInt32_call(otherNodeId int32, i int32) {
 	conn := node.connector.ConnectedConns[otherNodeId]
 	if conn == nil {
@@ -22,6 +34,7 @@ func (node *Node) SendInt32_call(otherNodeId int32, i int32) {
 	utils.LogI(fmt.Sprintf("Sent Int32 %d", i))
 }
 
+// Send a simple message contains an int64.
 func (node *Node) SendInt64_call(otherNodeId int32, i int64) {
 	conn := node.connector.ConnectedConns[otherNodeId]
 	if conn == nil {
@@ -36,6 +49,7 @@ func (node *Node) SendInt64_call(otherNodeId int32, i int64) {
 	utils.LogI(fmt.Sprintf("Sent Int64 %d", i))
 }
 
+// Send a simple message contains a string.
 func (node *Node) SendString_call(otherNodeId int32, s string) {
 	conn := node.connector.ConnectedConns[otherNodeId]
 	if conn == nil {
@@ -50,6 +64,7 @@ func (node *Node) SendString_call(otherNodeId int32, s string) {
 	utils.LogI(fmt.Sprintf("Sent String %s", s))
 }
 
+// Send an information request to master node.
 func (node *Node) RequestInfo_wcall() map[int32]int32 {
 	conn := node.connector.ConnectedConns[define.MasterId]
 	if conn == nil {
@@ -88,6 +103,7 @@ func (node *Node) RequestInfo_wcall() map[int32]int32 {
 	return ret
 }
 
+// Send money to others node.
 func (node *Node) Send_wcall(receiver int32, money int32) {
 	conn := node.connector.ConnectedConns[receiver]
 	if conn == nil {
@@ -110,6 +126,7 @@ func (node *Node) Send_wcall(receiver int32, money int32) {
 	node.money -= int64(money)
 }
 
+// Send token to other node.
 func (node *Node) SendToken_wcall(connId int32) {
 	msg := protocol.SimpleMessageBuffer{}
 	msg.Init(define.SendToken)
@@ -120,6 +137,7 @@ func (node *Node) SendToken_wcall(connId int32) {
 	node.connector.WaitAckRsp(connId, define.SendTokenRsp)
 }
 
+// Propagate token to all nodes.
 func (node *Node) propagateToken() {
 	for nodeId := range node.connector.ConnectedConns {
 		if nodeId == define.MasterId || nodeId == define.ObserverId {

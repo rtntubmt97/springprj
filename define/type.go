@@ -2,6 +2,8 @@ package define
 
 import "io"
 
+// Interface of the MessageBuffer
+
 type MessageBuffer interface {
 	WriteI32(i int32) MessageBuffer
 

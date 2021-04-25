@@ -1,3 +1,12 @@
+// In this project, master, observer and nodes are different processes. They will
+// communicate with each other through the network. This package provides basic materials
+// which will be used by those processes to connect to other, communicate by sending
+// and recieving messages.
+
+// All the data sent by connector will be serilized by the a message buffer with an cmd (int32) in front
+// of it in order to the reciever know what to do with that message.
+// The receiver will use the cmd in front of each message to determine the handler to handle it.
+
 package connector
 
 import (
@@ -10,20 +19,24 @@ import (
 	"github.com/rtntubmt97/springprj/utils"
 )
 
+// Participant Type, this data show role of an process in the network (master, observer, node).
 type ParticipantType int32
 
+// Integer value of (master, observer, node) type
 const (
 	MasterType   ParticipantType = 1
 	ObserverType ParticipantType = 2
 	NodeType     ParticipantType = 3
 )
 
+// Basic information of a proccess, it contains role, id, and listenning port for connection.
 type ParticipantInfo struct {
 	ParticipantType
 	NodeId     int32
 	ListenPort int32
 }
 
+// Connector is the struct which (master, observer, node) will be used to connect others.
 type Connector struct {
 	ParticipantType
 	id              int32
@@ -38,8 +51,11 @@ type Connector struct {
 	afterAccept     AfterAccept
 }
 
+// The interface of a call back function, this function will be called after an connection
+// is accepted by the connector.
 type AfterAccept func(connInfo ParticipantInfo)
 
+// Initilize the connector
 func (connector *Connector) Init(id int32) {
 	connector.id = id
 	connector.ConnectedConns = make(map[int32]net.Conn)
@@ -54,28 +70,32 @@ func (connector *Connector) Init(id int32) {
 	connector.SetHandleFunc(define.Rsp, connector.forwardRsp)
 }
 
-// func (connector *Connector) GetConnection(id int32) net.Conn {
-// 	return connector.ConnectedConns[id]
-// }
-
+// The connector communicates by sending and recieving messages. This function set the handler
+// for each kind of messages. Pay attention to the use of this function in the node or
+// master structure to understand the concept of it.
 func (connector *Connector) SetHandleFunc(cmd define.ConnectorCmd, f define.HandleFunc) {
 	connector.handlers[cmd] = f
 }
 
+// Set the AfterAccept function for connector.
 func (connector *Connector) SetAfterAccept(afterAccept AfterAccept) {
 	connector.afterAccept = afterAccept
 }
 
+// Wait the Connector for availble by trying to lock and unlock the mutex.
 func (connector *Connector) WaitReady() {
 	connector.readyMutex.Lock()
 	connector.readyMutex.Unlock()
 }
 
+// Check if the connector has connected to other connector by the other's id.
 func (connector *Connector) IsConnected(otherId int32) bool {
 	_, ok := connector.ConnectedConns[otherId]
 	return ok
 }
 
+// Initialize and save new connector information, prepare for sending and recieving data
+// from it
 func (connector *Connector) initNewConn(peerInfo ParticipantInfo, conn net.Conn) {
 	connId := peerInfo.NodeId
 	connector.ConnectedConns[connId] = conn
@@ -84,6 +104,7 @@ func (connector *Connector) initNewConn(peerInfo ParticipantInfo, conn net.Conn)
 	connector.OtherInfos[connId] = &peerInfo
 }
 
+// Connect to other connector by its id and listen port
 func (connector *Connector) Connect(id int32, port int32) {
 	var err error
 	add := fmt.Sprintf("localhost:%d", port)
@@ -116,6 +137,7 @@ func (connector *Connector) Connect(id int32, port int32) {
 	go connector.Handle(otherInfo, conn)
 }
 
+// Start listen at port for other connector to connector to connect
 func (connector *Connector) Listen(port int) {
 	connector.readyMutex.Lock()
 	var err error
@@ -160,6 +182,7 @@ func (connector *Connector) Listen(port int) {
 	}
 }
 
+// Handle incoming connector by its info and net.Conn
 func (connector *Connector) Handle(otherInfo ParticipantInfo, conn net.Conn) {
 	for {
 		// utils.LogI(fmt.Sprintf("%d run Handle", connector.id))
@@ -177,6 +200,7 @@ func (connector *Connector) Handle(otherInfo ParticipantInfo, conn net.Conn) {
 	}
 }
 
+// Send current connector's information to other connector and recieve its information
 func (connector *Connector) greeting_wcall(conn net.Conn) (error, ParticipantInfo) {
 	msg := protocol.SimpleMessageBuffer{}
 	msg.Init(define.Greeting)
@@ -199,6 +223,7 @@ func (connector *Connector) greeting_wcall(conn net.Conn) (error, ParticipantInf
 	return nil, ParticipantInfo{ParticipantType(cType), cId, 0}
 }
 
+// Recieve accepted connector's information and send current connector information to that connector
 func (connector *Connector) greeting_whandle(msg define.MessageBuffer, conn net.Conn) (error, ParticipantInfo) {
 	cmd := define.ConnectorCmd(msg.ReadI32())
 	if cmd != define.Greeting {
@@ -221,6 +246,7 @@ func (connector *Connector) greeting_whandle(msg define.MessageBuffer, conn net.
 		ListenPort:      portFromGreeting}
 }
 
+// Write a writeable message to a connector specified by its id
 func (connector *Connector) WriteTo(connId int32, msg define.Writeable) {
 	mutex := connector.writeOutMutexes[connId]
 	mutex.Lock()
@@ -229,14 +255,18 @@ func (connector *Connector) WriteTo(connId int32, msg define.Writeable) {
 	msg.Write(conn)
 }
 
+// Forward the response message to its corresponding channel in order to the handler
+// receive and continue proccess it
 func (connector *Connector) forwardRsp(connId int32, msg define.MessageBuffer) {
 	connector.rspMsgChannel[connId] <- msg
 }
 
+// Wait an incoming message from a specific connector
 func (connector *Connector) WaitRsp(connId int32) define.MessageBuffer {
 	return <-connector.rspMsgChannel[connId]
 }
 
+// Send an ack message to a specific connector
 func (connector *Connector) SendAckRsp(connId int32, cmd define.ConnectorCmd) {
 	rspMsg := protocol.SimpleMessageBuffer{}
 	rspMsg.Init(define.Rsp)
@@ -244,6 +274,7 @@ func (connector *Connector) SendAckRsp(connId int32, cmd define.ConnectorCmd) {
 	connector.WriteTo(connId, &rspMsg)
 }
 
+// Wait fo an Ack message from a specific connector and check where it is correct ack by the cmd
 func (connector *Connector) WaitAckRsp(nodeId int32, cmd define.ConnectorCmd) {
 	rspMsg := connector.WaitRsp(nodeId)
 	rspCmd := define.ConnectorCmd(rspMsg.ReadI32())

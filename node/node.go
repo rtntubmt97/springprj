@@ -1,43 +1,50 @@
+// Node is the main actor in this project. It will receive the signal from the master
+// and handle them with their own business logic. Of course its logic has to follow the
+// chandy lamport algorithm.
+
+// Node package includes 3 files: node.go, nodeCallers.go and nodeHandlers.go.
+// Node.go file contains the node structure and its basic operation.
+// nodeCallers.go file contains its caller which will be used to send data to other
+// to nodes or observer by specific message.
+// nodeHandlers.go file contains its handler which will be used to handle the
+// incoming messages.
+
 package node
 
 import (
-	"github.com/rtntubmt97/springprj/connector"
 	connectorPkg "github.com/rtntubmt97/springprj/connector"
 	"github.com/rtntubmt97/springprj/define"
 )
 
+// The Node struct contains its id, current money, a connector, an id->moneytoken_channel map, a snapshot
 type Node struct {
 	id            int32
 	money         int64
 	connector     connectorPkg.Connector
 	moneyChannels map[int32]([]MoneyTokenInfo)
 	snapShot      SnapShot
-
-	// this flow can be implemented more easy if golang has tree structure
-	// infoId int32
-	// nextTokenId      int32
-	// readStatusInfoId map[int32]bool
 }
 
+// MoneyTokenInfo struct contains the sender money and the amount of money (-1 if this is a token).
 type MoneyTokenInfo struct {
 	// id       int32
 	SenderId int32
 	Money    int32
 }
 
+// Snapshot struct contains the current money (node state) and a channel=>money map (channel states).
+// This structure will be move to the define package later.
 type SnapShot struct {
 	NodeMoney     int64
 	ChannelMoneys map[int32]int64
 }
 
+// Determine whether the info (usualy in channel) is money or a token.
 func (info MoneyTokenInfo) IsToken() bool {
 	return info.Money == -1
 }
 
-func (node *Node) IsConnected(otherId int32) bool {
-	return node.connector.IsConnected(otherId)
-}
-
+// Initilize the node.
 func (node *Node) Init(id int32) {
 	node.id = id
 	connector := connectorPkg.Connector{}
@@ -52,8 +59,8 @@ func (node *Node) Init(id int32) {
 	connector.SetHandleFunc(define.Input_Kill, node.inputKill_whandle)
 	connector.SetHandleFunc(define.Input_Send, node.inputSend_whandle)
 	connector.SetHandleFunc(define.Send, node.send_whandle)
-	connector.SetHandleFunc(define.Input_Recieve, node.inputReceive_whandle)
-	connector.SetHandleFunc(define.Input_RecieveAll, node.inputReceiveAll_whandle)
+	connector.SetHandleFunc(define.Input_receive, node.inputReceive_whandle)
+	connector.SetHandleFunc(define.Input_receiveAll, node.inputReceiveAll_whandle)
 	connector.SetHandleFunc(define.Input_BeginSnapshot, node.inputBeginSnapshot_whandle)
 	connector.SetHandleFunc(define.SendToken, node.sendToken_whandle)
 	connector.SetHandleFunc(define.CollectState, node.collectState_whandle)
@@ -66,34 +73,42 @@ func (node *Node) Init(id int32) {
 	// node.readStatusInfoId = map[int32]bool{}
 }
 
+// Get the node id.
 func (node *Node) GetId() int32 {
 	return node.id
 }
 
+// Set the current node money.
 func (node *Node) SetMoney(money int64) {
 	node.money = money
 }
 
-func (node *Node) Start() {
-
-}
-
+// Start the listen operation.
 func (node *Node) Listen(port int) {
 	node.connector.Listen(port)
 }
 
+// Determin whether the Node has connected to a node specified by an id.
+func (node *Node) IsConnected(otherId int32) bool {
+	return node.connector.IsConnected(otherId)
+}
+
+// connect to a connector (master, observer or node).
 func (node *Node) Connect(id int32, port int32) {
 	node.connector.Connect(id, port)
 }
 
+// Connect to master.
 func (node *Node) ConnectMaster() {
 	node.Connect(define.MasterId, define.MasterPort)
 }
 
+// Connect to observer.
 func (node *Node) ConnectObserver() {
 	node.Connect(define.ObserverId, define.ObserverPort)
 }
 
+// Connect to other nodes, after request other nodes information from the master.
 func (node *Node) ConnectPeers() {
 	otherNodeListenPorts := node.RequestInfo_wcall()
 	for nodeId, port := range otherNodeListenPorts {
@@ -108,51 +123,17 @@ func (node *Node) ConnectPeers() {
 	}
 }
 
+// Wait and return when the node ready.
 func (node *Node) WaitReady() {
 	node.connector.WaitReady()
 }
 
+// Wait for a response message and return it.
 func (node *Node) WaitRsp(connId int32) define.MessageBuffer {
 	return node.connector.WaitRsp(connId)
 }
 
-func (node *Node) afterAccept(conInfo connector.ParticipantInfo) {
+// The callback will be call after a new connector accepted by this node connector.
+func (node *Node) afterAccept(conInfo connectorPkg.ParticipantInfo) {
 	node.moneyChannels[conInfo.NodeId] = make([]MoneyTokenInfo, 0)
 }
-
-// func (node *Node) nextInfoId() int32 {
-// 	ret := node.infoId
-// 	node.infoId++
-// 	return ret
-// }
-
-// func (node *Node) setReadInfoId(infoId int32) {
-// 	delete(node.readStatusInfoId, infoId)
-// }
-
-// func (node *Node) shouldReadMasterToken(infoId int32) bool {
-// 	tokenId := int32(-1)
-// 	masterChannel := node.moneyChannels[define.MasterId]
-// 	if len(masterChannel) == 0 {
-// 		utils.LogI(fmt.Sprintf("Node %d check for infoId %d, tokenId is %d\n", node.id, infoId, tokenId))
-// 		return false
-// 	}
-
-// 	nextMasterTokenId := masterChannel[0].id
-// 	tokenId = nextMasterTokenId
-// 	utils.LogI(fmt.Sprintf("Node %d check for infoId %d, tokenId is %d\n", node.id, infoId, tokenId))
-// 	if infoId == nextMasterTokenId {
-// 		utils.LogE("Wrong infoId")
-// 	}
-
-// 	return infoId > nextMasterTokenId
-// }
-
-// func (node *Node) updateNextTokenId() {
-// 	masterChannel := node.moneyChannels[define.MasterId]
-// 	if len(masterChannel) == 0 {
-// 		return
-// 	}
-// 	node.nextTokenId = masterChannel[0].id
-// 	node.moneyChannels[define.MasterId] = node.moneyChannels[define.MasterId][1:]
-// }

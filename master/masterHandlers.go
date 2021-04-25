@@ -6,6 +6,8 @@ import (
 	"github.com/rtntubmt97/springprj/utils"
 )
 
+// Handle the request info message from a connector, response it all master-known
+// connector information
 func (master *Master) requestInfo_whandle(connId int32, msg define.MessageBuffer) {
 	utils.LogI("requestInfo_whandle run")
 	rspMsg := protocol.SimpleMessageBuffer{}
